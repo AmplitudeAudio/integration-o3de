@@ -1,0 +1,16 @@
+{
+    "Amazon": {
+        "AssetProcessor": {
+            "Settings": {
+                "Exclude Amplitude Audio Project": {
+                    "pattern": ".*[sS]ounds\\\\/amplitude_project.*"
+                },
+                "RC Amplitude Asset": {
+                    "pattern": ".*[sS]ounds\\\\/amplitude_assets.*",
+                    "params": "copy",
+                    "server": "skip"
+                }
+            }
+        }
+    }
+}

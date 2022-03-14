@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="/Editor/Icons">
+    <file alias="bus_normal.svg">Icons/bus_normal.svg</file>
+    <file alias="bus_selected.svg">Icons/bus_selected.svg</file>
+    <file alias="event_normal.svg">Icons/event_normal.svg</file>
+    <file alias="event_selected.svg">Icons/event_selected.svg</file>
+    <file alias="rtpc_normal.svg">Icons/rtpc_normal.svg</file>
+    <file alias="rtpc_selected.svg">Icons/rtpc_selected.svg</file>
+    <file alias="soundbank_normal.svg">Icons/soundbank_normal.svg</file>
+    <file alias="soundbank_selected.svg">Icons/soundbank_selected.svg</file>
+    <file alias="switch_state_normal.svg">Icons/switch_state_normal.svg</file>
+    <file alias="switch_state_selected.svg">Icons/switch_state_selected.svg</file>
+    <file alias="switch_normal.svg">Icons/switch_normal.svg</file>
+    <file alias="switch_selected.svg">Icons/switch_selected.svg</file>
+  </qresource>
+</RCC>

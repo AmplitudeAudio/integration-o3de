@@ -1,0 +1,9 @@
+.idea/
+.vs/
+.vscode/
+
+# Generated folders
+[Bb]uild/
+[Cc]ache/
+[Uu]ser/
+__pycache__/
