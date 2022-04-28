@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SSAmplitudeAudioSystemComponent.h>
+#include <AmplitudeAudioSystemComponent.h>
 
 #include <AzCore/Console/ILogger.h>
 #include <AzCore/Memory/OSAllocator.h>
@@ -31,15 +31,15 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void SSAmplitudeAudioSystemComponent::Reflect(AZ::ReflectContext* context)
+    void AmplitudeAudioSystemComponent::Reflect(AZ::ReflectContext* context)
     {
         if (AZ::SerializeContext* serialize = azrtti_cast<AZ::SerializeContext*>(context))
         {
-            serialize->Class<SSAmplitudeAudioSystemComponent, AZ::Component>()->Version(0);
+            serialize->Class<AmplitudeAudioSystemComponent, AZ::Component>()->Version(0);
 
             if (AZ::EditContext* ec = serialize->GetEditContext())
             {
-                ec->Class<SSAmplitudeAudioSystemComponent>(
+                ec->Class<AmplitudeAudioSystemComponent>(
                       "Sparky Studios - Audio - Amplitude Audio Gem", "Amplitude Audio implementation of the Audio Engine interfaces")
                     ->ClassElement(AZ::Edit::ClassElements::EditorData, "")
                     ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC("System"))
@@ -48,43 +48,43 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void SSAmplitudeAudioSystemComponent::GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided)
+    void AmplitudeAudioSystemComponent::GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided)
     {
         provided.push_back(AZ_CRC_CE("AudioEngineService"));
     }
 
-    void SSAmplitudeAudioSystemComponent::GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible)
+    void AmplitudeAudioSystemComponent::GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible)
     {
         incompatible.push_back(AZ_CRC_CE("AudioEngineService"));
     }
 
-    void SSAmplitudeAudioSystemComponent::GetRequiredServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& required)
+    void AmplitudeAudioSystemComponent::GetRequiredServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& required)
     {
         required.push_back(AZ_CRC("AudioSystemService"));
     }
 
-    void SSAmplitudeAudioSystemComponent::GetDependentServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& dependent)
+    void AmplitudeAudioSystemComponent::GetDependentServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& dependent)
     {
         dependent.push_back(AZ_CRC("AudioSystemService"));
     }
 
-    SSAmplitudeAudioSystemComponent::SSAmplitudeAudioSystemComponent()
+    AmplitudeAudioSystemComponent::AmplitudeAudioSystemComponent()
     {
-        if (SSAmplitudeAudioInterface::Get() == nullptr)
+        if (AmplitudeAudioInterface::Get() == nullptr)
         {
-            SSAmplitudeAudioInterface::Register(this);
+            AmplitudeAudioInterface::Register(this);
         }
     }
 
-    SSAmplitudeAudioSystemComponent::~SSAmplitudeAudioSystemComponent()
+    AmplitudeAudioSystemComponent::~AmplitudeAudioSystemComponent()
     {
-        if (SSAmplitudeAudioInterface::Get() == this)
+        if (AmplitudeAudioInterface::Get() == this)
         {
-            SSAmplitudeAudioInterface::Unregister(this);
+            AmplitudeAudioInterface::Unregister(this);
         }
     }
 
-    bool SSAmplitudeAudioSystemComponent::Initialize()
+    bool AmplitudeAudioSystemComponent::Initialize()
     {
         bool result = false;
 
@@ -142,7 +142,7 @@ namespace SparkyStudios::Audio::Amplitude
         return result;
     }
 
-    void SSAmplitudeAudioSystemComponent::Release()
+    void AmplitudeAudioSystemComponent::Release()
     {
         _amplitudeEngine.reset();
 
@@ -152,25 +152,25 @@ namespace SparkyStudios::Audio::Amplitude
         }
     }
 
-    void SSAmplitudeAudioSystemComponent::Init()
+    void AmplitudeAudioSystemComponent::Init()
     {
     }
 
-    void SSAmplitudeAudioSystemComponent::Activate()
+    void AmplitudeAudioSystemComponent::Activate()
     {
         ::Audio::Gem::AudioEngineGemRequestBus::Handler::BusConnect();
-        SSAmplitudeAudioRequestBus::Handler::BusConnect();
+        AmplitudeAudioRequestBus::Handler::BusConnect();
         AZ::TickBus::Handler::BusConnect();
     }
 
-    void SSAmplitudeAudioSystemComponent::Deactivate()
+    void AmplitudeAudioSystemComponent::Deactivate()
     {
         AZ::TickBus::Handler::BusDisconnect();
-        SSAmplitudeAudioRequestBus::Handler::BusDisconnect();
+        AmplitudeAudioRequestBus::Handler::BusDisconnect();
         ::Audio::Gem::AudioEngineGemRequestBus::Handler::BusDisconnect();
     }
 
-    void SSAmplitudeAudioSystemComponent::OnTick([[maybe_unused]] float deltaTime, [[maybe_unused]] AZ::ScriptTimePoint time)
+    void AmplitudeAudioSystemComponent::OnTick([[maybe_unused]] float deltaTime, [[maybe_unused]] AZ::ScriptTimePoint time)
     {
     }
 } // namespace SparkyStudios::Audio::Amplitude

@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <SSAmplitudeAudio/SSAmplitudeAudioBus.h>
+#include <SparkyStudios/Audio/Amplitude/AmplitudeAudioBus.h>
 
 #include <AzCore/std/smart_ptr/unique_ptr.h>
 
@@ -26,14 +26,14 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SSAmplitudeAudioSystemComponent
+    class AmplitudeAudioSystemComponent
         : public AZ::Component
         , public AZ::TickBus::Handler
         , protected ::Audio::Gem::AudioEngineGemRequestBus::Handler
-        , protected SSAmplitudeAudioRequestBus::Handler
+        , protected AmplitudeAudioRequestBus::Handler
     {
     public:
-        AZ_COMPONENT(SSAmplitudeAudioSystemComponent, "{C8566CAF-B250-4687-A470-57DC9F881971}");
+        AZ_COMPONENT(AmplitudeAudioSystemComponent, "{C8566CAF-B250-4687-A470-57DC9F881971}");
 
         static void Reflect(AZ::ReflectContext* context);
 
@@ -42,32 +42,24 @@ namespace SparkyStudios::Audio::Amplitude
         static void GetRequiredServices(AZ::ComponentDescriptor::DependencyArrayType& required);
         static void GetDependentServices(AZ::ComponentDescriptor::DependencyArrayType& dependent);
 
-        SSAmplitudeAudioSystemComponent();
-        ~SSAmplitudeAudioSystemComponent();
+        AmplitudeAudioSystemComponent();
+        ~AmplitudeAudioSystemComponent() override;
 
     protected:
-        ////////////////////////////////////////////////////////////////////////
-        // SSAmplitudeAudioRequestBus interface implementation
+        // AmplitudeAudioRequestBus interface implementation
 
-        ////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
         // Audio::Gem::AudioEngineGemRequestBus interface implementation
         bool Initialize() override;
         void Release() override;
-        ////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
         // AZ::Component interface implementation
         void Init() override;
         void Activate() override;
         void Deactivate() override;
-        ////////////////////////////////////////////////////////////////////////
 
-        ////////////////////////////////////////////////////////////////////////
         // AZTickBus interface implementation
         void OnTick(float deltaTime, AZ::ScriptTimePoint time) override;
-        ////////////////////////////////////////////////////////////////////////
 
     private:
         AZStd::unique_ptr<::Audio::AudioSystemImplementation> _amplitudeEngine;

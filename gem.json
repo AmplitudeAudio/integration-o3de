@@ -16,9 +16,7 @@
         "Code",
         "Sparky Studios"
     ],
-    "dependencies": [
-        "AudioSystem"
-    ],
+    "dependencies": [],
     "icon_path": "preview.png",
     "requirements": "It's needed to download and install Amplitude from the the <a href='https://github.com/SparkyStudios/AmplitudeAudioSDK/releases'>repository releases page</a>."
 }

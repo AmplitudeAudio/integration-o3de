@@ -42,9 +42,7 @@ namespace Audio
         {
         }
 
-        ~SATLAudioObjectData_Amplitude() override
-        {
-        }
+        ~SATLAudioObjectData_Amplitude() override = default;
 
         bool bNeedsToUpdateEnvironments;
         const bool bHasPosition;
@@ -60,9 +58,7 @@ namespace Audio
         {
         }
 
-        ~SATLListenerData_Amplitude() override
-        {
-        }
+        ~SATLListenerData_Amplitude() override = default;
 
         const AmListenerID nAmListenerObjectId = kAmInvalidObjectId;
     };
@@ -75,9 +71,7 @@ namespace Audio
         {
         }
 
-        ~SATLTriggerImplData_Amplitude() override
-        {
-        }
+        ~SATLTriggerImplData_Amplitude() override = default;
 
         const AmEventID nAmID;
     };
@@ -85,14 +79,12 @@ namespace Audio
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     struct SATLRtpcImplData_Amplitude : public IATLRtpcImplData
     {
-        SATLRtpcImplData_Amplitude(const AmRtpcID nPassedAmID)
+        explicit SATLRtpcImplData_Amplitude(const AmRtpcID nPassedAmID)
             : nAmID(nPassedAmID)
         {
         }
 
-        ~SATLRtpcImplData_Amplitude() override
-        {
-        }
+        ~SATLRtpcImplData_Amplitude() override = default;
 
         const AmRtpcID nAmID;
     };
@@ -106,9 +98,7 @@ namespace Audio
         {
         }
 
-        ~SATLSwitchStateImplData_Amplitude() override
-        {
-        }
+        ~SATLSwitchStateImplData_Amplitude() override = default;
 
         const AmSwitchID nAmSwitchID;
         const AmObjectID nAmStateID;
@@ -145,15 +135,12 @@ namespace Audio
         {
         }
 
-        ~SATLEnvironmentImplData_Amplitude() override
-        {
-        }
+        ~SATLEnvironmentImplData_Amplitude() override = default;
 
         const EAmplitudeAudioEnvironmentType eType;
-        AmObjectID nAmEnvID;
-        union
-        {
-            AmObjectID nAmStateID;
+        AmObjectID nAmEnvID = kAmInvalidObjectId;
+        union {
+            AmObjectID nAmStateID = kAmInvalidObjectId;
             AmEffectID nAmEffectID;
         };
     };
@@ -169,9 +156,7 @@ namespace Audio
         {
         }
 
-        ~SATLEventData_Amplitude() override
-        {
-        }
+        ~SATLEventData_Amplitude() override = default;
 
         EAudioEventState audioEventState;
         EventCanceler eventCanceler;
@@ -187,14 +172,12 @@ namespace Audio
         {
         }
 
-        SATLAudioFileEntryData_Amplitude(AmBankID bankId)
+        explicit SATLAudioFileEntryData_Amplitude(AmBankID bankId)
             : nAmBankID(bankId)
         {
         }
 
-        ~SATLAudioFileEntryData_Amplitude() override
-        {
-        }
+        ~SATLAudioFileEntryData_Amplitude() override = default;
 
         AmBankID nAmBankID;
     };

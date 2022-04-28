@@ -13,5 +13,5 @@
 # limitations under the License.
 
 set(FILES
-    Source/SSAmplitudeAudioModule_Stub.cpp
+    Source/AmplitudeAudioModule_Stub.cpp
 )

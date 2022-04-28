@@ -14,29 +14,29 @@
 
 #pragma once
 
-#include <SSAmplitudeAudioEditorSystemComponent.h>
-#include <SSAmplitudeAudioModuleInterface.h>
+#include <AmplitudeAudioEditorSystemComponent.h>
+#include <AmplitudeAudioModuleInterface.h>
 
 #include <Builder/AmplitudeAudioControlBuilderComponent.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SSAmplitudeAudioEditorModule : public SSAmplitudeAudioModuleInterface
+    class AmplitudeAudioEditorModule : public AmplitudeAudioModuleInterface
     {
     public:
-        AZ_RTTI(SSAmplitudeAudioEditorModule, "{2d70ff2e-7444-4f1c-a67c-13dd81b980cb}", SSAmplitudeAudioModuleInterface);
-        AZ_CLASS_ALLOCATOR(SSAmplitudeAudioEditorModule, AZ::SystemAllocator, 0);
+        AZ_RTTI(AmplitudeAudioEditorModule, "{8A8A1807-B917-4DC7-9001-F3F156EA2180}", AmplitudeAudioModuleInterface);
+        AZ_CLASS_ALLOCATOR(AmplitudeAudioEditorModule, AZ::SystemAllocator, 0);
 
-        SSAmplitudeAudioEditorModule()
+        AmplitudeAudioEditorModule()
         {
             // Push results of [MyComponent]::CreateDescriptor() into m_descriptors here.
             // Add ALL components descriptors associated with this gem to m_descriptors.
-            // This will associate the AzTypeInfo information for the components with the the SerializeContext, BehaviorContext and
+            // This will associate the AzTypeInfo information for the components with the SerializeContext, BehaviorContext and
             // EditContext. This happens through the [MyComponent]::Reflect() function.
             m_descriptors.insert(
                 m_descriptors.end(),
                 {
-                    SSAmplitudeAudioEditorSystemComponent::CreateDescriptor(),
+                    AmplitudeAudioEditorSystemComponent::CreateDescriptor(),
                     AmplitudeAudioControlBuilderComponent::CreateDescriptor(),
                 });
         }
@@ -45,13 +45,13 @@ namespace SparkyStudios::Audio::Amplitude
          * Add required SystemComponents to the SystemEntity.
          * Non-SystemComponents should not be added here
          */
-        AZ::ComponentTypeList GetRequiredSystemComponents() const override
+        [[nodiscard]] AZ::ComponentTypeList GetRequiredSystemComponents() const override
         {
             return AZ::ComponentTypeList{
-                azrtti_typeid<SSAmplitudeAudioEditorSystemComponent>(),
+                azrtti_typeid<AmplitudeAudioEditorSystemComponent>(),
             };
         }
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-AZ_DECLARE_MODULE_CLASS(Gem_SSAmplitudeAudio, SparkyStudios::Audio::Amplitude::SSAmplitudeAudioEditorModule)
+AZ_DECLARE_MODULE_CLASS(Gem_SSAmplitudeAudio, SparkyStudios::Audio::Amplitude::AmplitudeAudioEditorModule)

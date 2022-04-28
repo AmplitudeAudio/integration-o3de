@@ -19,37 +19,37 @@
 
 #include <IGem.h>
 
-#include <SSAmplitudeAudioSystemComponent.h>
+#include <AmplitudeAudioSystemComponent.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SSAmplitudeAudioModuleInterface : public CryHooksModule
+    class AmplitudeAudioModuleInterface : public CryHooksModule
     {
     public:
-        AZ_RTTI(SSAmplitudeAudioModuleInterface, "{ff431931-73d9-4112-b26a-0e3a7dc34d05}", CryHooksModule);
-        AZ_CLASS_ALLOCATOR(SSAmplitudeAudioModuleInterface, AZ::SystemAllocator, 0);
+        AZ_RTTI(AmplitudeAudioModuleInterface, "{ff431931-73d9-4112-b26a-0e3a7dc34d05}", CryHooksModule);
+        AZ_CLASS_ALLOCATOR(AmplitudeAudioModuleInterface, AZ::SystemAllocator, 0);
 
-        SSAmplitudeAudioModuleInterface()
+        AmplitudeAudioModuleInterface()
             : CryHooksModule()
         {
             // Push results of [MyComponent]::CreateDescriptor() into m_descriptors here.
             // Add ALL components descriptors associated with this gem to m_descriptors.
-            // This will associate the AzTypeInfo information for the components with the the SerializeContext, BehaviorContext and
+            // This will associate the AzTypeInfo information for the components with the SerializeContext, BehaviorContext and
             // EditContext. This happens through the [MyComponent]::Reflect() function.
             m_descriptors.insert(
                 m_descriptors.end(),
                 {
-                    SSAmplitudeAudioSystemComponent::CreateDescriptor(),
+                    AmplitudeAudioSystemComponent::CreateDescriptor(),
                 });
         }
 
         /**
          * Add required SystemComponents to the SystemEntity.
          */
-        AZ::ComponentTypeList GetRequiredSystemComponents() const override
+        [[nodiscard]] AZ::ComponentTypeList GetRequiredSystemComponents() const override
         {
             return AZ::ComponentTypeList{
-                azrtti_typeid<SSAmplitudeAudioSystemComponent>(),
+                azrtti_typeid<AmplitudeAudioSystemComponent>(),
             };
         }
     };

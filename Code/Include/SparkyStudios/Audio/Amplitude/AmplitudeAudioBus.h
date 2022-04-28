@@ -19,25 +19,22 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SSAmplitudeAudioRequests
+    class AmplitudeAudioRequests
     {
     public:
-        AZ_RTTI(SSAmplitudeAudioRequests, "{BA47A728-B462-4612-A2B0-CFA05117F47D}");
-        virtual ~SSAmplitudeAudioRequests() = default;
+        AZ_RTTI(AmplitudeAudioRequests, "{BA47A728-B462-4612-A2B0-CFA05117F47D}");
+        virtual ~AmplitudeAudioRequests() = default;
         // Put your public methods here
     };
 
-    class SSAmplitudeAudioBusTraits : public AZ::EBusTraits
+    class AmplitudeAudioBusTraits : public AZ::EBusTraits
     {
     public:
-        //////////////////////////////////////////////////////////////////////////
         // EBusTraits overrides
         static constexpr AZ::EBusHandlerPolicy HandlerPolicy = AZ::EBusHandlerPolicy::Single;
         static constexpr AZ::EBusAddressPolicy AddressPolicy = AZ::EBusAddressPolicy::Single;
-        //////////////////////////////////////////////////////////////////////////
     };
 
-    using SSAmplitudeAudioRequestBus = AZ::EBus<SSAmplitudeAudioRequests, SSAmplitudeAudioBusTraits>;
-    using SSAmplitudeAudioInterface = AZ::Interface<SSAmplitudeAudioRequests>;
-
+    using AmplitudeAudioRequestBus = AZ::EBus<AmplitudeAudioRequests, AmplitudeAudioBusTraits>;
+    using AmplitudeAudioInterface = AZ::Interface<AmplitudeAudioRequests>;
 } // namespace SparkyStudios::Audio::Amplitude

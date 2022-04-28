@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <SSAmplitudeAudioSystemComponent.h>
+#include <AmplitudeAudioSystemComponent.h>
 
 #include <AzToolsFramework/Entity/EditorEntityContextBus.h>
 
@@ -22,28 +22,26 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    /// System component for SSAmplitudeAudio editor
-    class SSAmplitudeAudioEditorSystemComponent
-        : public SSAmplitudeAudioSystemComponent
+    /// System component for the Amplitude Audio Editor Gem.
+    class AmplitudeAudioEditorSystemComponent
+        : public AmplitudeAudioSystemComponent
         , protected AudioControlsEditor::EditorImplPluginEventBus::Handler
         , private AzToolsFramework::EditorEvents::Bus::Handler
     {
-        using BaseSystemComponent = SSAmplitudeAudioSystemComponent;
+        using BaseSystemComponent = AmplitudeAudioSystemComponent;
 
     public:
-        AZ_COMPONENT(SSAmplitudeAudioEditorSystemComponent, "{d8ff9eb7-b0f2-4a1c-b481-4308db435610}", BaseSystemComponent);
+        AZ_COMPONENT(AmplitudeAudioEditorSystemComponent, "{d8ff9eb7-b0f2-4a1c-b481-4308db435610}", BaseSystemComponent);
         static void Reflect(AZ::ReflectContext* context);
 
-        SSAmplitudeAudioEditorSystemComponent();
-        ~SSAmplitudeAudioEditorSystemComponent();
+        AmplitudeAudioEditorSystemComponent();
+        ~AmplitudeAudioEditorSystemComponent() override;
 
     protected:
-        ////////////////////////////////////////////////////////////////////////
         // AudioControlsEditor::EditorImplPluginEventBus interface implementation
         void InitializeEditorImplPlugin() override;
         void ReleaseEditorImplPlugin() override;
         AudioControls::IAudioSystemEditor* GetEditorImplPlugin() override;
-        ////////////////////////////////////////////////////////////////////////
 
     private:
         static void GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided);

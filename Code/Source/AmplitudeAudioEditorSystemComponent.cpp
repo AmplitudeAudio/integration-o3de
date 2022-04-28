@@ -12,71 +12,71 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <AmplitudeAudioEditorSystemComponent.h>
 #include <AzCore/Serialization/SerializeContext.h>
-#include <SSAmplitudeAudioEditorSystemComponent.h>
 
 #include <Editor/AmplitudeAudioSystemEditor.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    void SSAmplitudeAudioEditorSystemComponent::Reflect(AZ::ReflectContext* context)
+    void AmplitudeAudioEditorSystemComponent::Reflect(AZ::ReflectContext* context)
     {
         if (auto serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
         {
-            serializeContext->Class<SSAmplitudeAudioEditorSystemComponent, SSAmplitudeAudioSystemComponent>()->Version(0);
+            serializeContext->Class<AmplitudeAudioEditorSystemComponent, AmplitudeAudioSystemComponent>()->Version(0);
         }
     }
 
-    SSAmplitudeAudioEditorSystemComponent::SSAmplitudeAudioEditorSystemComponent() = default;
+    AmplitudeAudioEditorSystemComponent::AmplitudeAudioEditorSystemComponent() = default;
 
-    SSAmplitudeAudioEditorSystemComponent::~SSAmplitudeAudioEditorSystemComponent() = default;
+    AmplitudeAudioEditorSystemComponent::~AmplitudeAudioEditorSystemComponent() = default;
 
-    void SSAmplitudeAudioEditorSystemComponent::InitializeEditorImplPlugin()
+    void AmplitudeAudioEditorSystemComponent::InitializeEditorImplPlugin()
     {
         m_editorImplPlugin.reset(new AmplitudeAudioSystemEditor());
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::ReleaseEditorImplPlugin()
+    void AmplitudeAudioEditorSystemComponent::ReleaseEditorImplPlugin()
     {
         m_editorImplPlugin.reset();
     }
 
-    AudioControls::IAudioSystemEditor* SSAmplitudeAudioEditorSystemComponent::GetEditorImplPlugin()
+    AudioControls::IAudioSystemEditor* AmplitudeAudioEditorSystemComponent::GetEditorImplPlugin()
     {
         return m_editorImplPlugin.get();
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided)
+    void AmplitudeAudioEditorSystemComponent::GetProvidedServices(AZ::ComponentDescriptor::DependencyArrayType& provided)
     {
         BaseSystemComponent::GetProvidedServices(provided);
         provided.push_back(AZ_CRC_CE("SSAmplitudeAudioEditorService"));
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible)
+    void AmplitudeAudioEditorSystemComponent::GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible)
     {
         BaseSystemComponent::GetIncompatibleServices(incompatible);
         incompatible.push_back(AZ_CRC_CE("SSAmplitudeAudioEditorService"));
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::GetRequiredServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& required)
+    void AmplitudeAudioEditorSystemComponent::GetRequiredServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& required)
     {
         BaseSystemComponent::GetRequiredServices(required);
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::GetDependentServices(
+    void AmplitudeAudioEditorSystemComponent::GetDependentServices(
         [[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& dependent)
     {
         BaseSystemComponent::GetDependentServices(dependent);
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::Activate()
+    void AmplitudeAudioEditorSystemComponent::Activate()
     {
         BaseSystemComponent::Activate();
         AzToolsFramework::EditorEvents::Bus::Handler::BusConnect();
         AudioControlsEditor::EditorImplPluginEventBus::Handler::BusConnect();
     }
 
-    void SSAmplitudeAudioEditorSystemComponent::Deactivate()
+    void AmplitudeAudioEditorSystemComponent::Deactivate()
     {
         AudioControlsEditor::EditorImplPluginEventBus::Handler::BusDisconnect();
         AzToolsFramework::EditorEvents::Bus::Handler::BusDisconnect();

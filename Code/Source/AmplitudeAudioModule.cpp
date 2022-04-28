@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <SSAmplitudeAudioModuleInterface.h>
-#include <SSAmplitudeAudioSystemComponent.h>
+#include <AmplitudeAudioModuleInterface.h>
+#include <AmplitudeAudioSystemComponent.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    class SSAmplitudeAudioModule : public SSAmplitudeAudioModuleInterface
+    class AmplitudeAudioModule : public AmplitudeAudioModuleInterface
     {
     public:
-        AZ_RTTI(SSAmplitudeAudioModule, "{2D70FF2E-7444-4F1C-A67C-13DD81B980CB}", SSAmplitudeAudioModuleInterface);
-        AZ_CLASS_ALLOCATOR(SSAmplitudeAudioModule, AZ::SystemAllocator, 0);
+        AZ_RTTI(AmplitudeAudioModule, "{2D70FF2E-7444-4F1C-A67C-13DD81B980CB}", AmplitudeAudioModuleInterface);
+        AZ_CLASS_ALLOCATOR(AmplitudeAudioModule, AZ::SystemAllocator, 0);
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-AZ_DECLARE_MODULE_CLASS(Gem_SSAmplitudeAudio, SparkyStudios::Audio::Amplitude::SSAmplitudeAudioModule)
+AZ_DECLARE_MODULE_CLASS(Gem_SSAmplitudeAudio, SparkyStudios::Audio::Amplitude::AmplitudeAudioModule)
