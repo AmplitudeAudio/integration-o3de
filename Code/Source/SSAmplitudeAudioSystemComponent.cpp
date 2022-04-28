@@ -14,6 +14,7 @@
 
 #include <SSAmplitudeAudioSystemComponent.h>
 
+#include <AzCore/Console/ILogger.h>
 #include <AzCore/Memory/OSAllocator.h>
 #include <AzCore/PlatformDef.h>
 #include <AzCore/Serialization/EditContext.h>
@@ -24,14 +25,9 @@
 #include <AzFramework/Platform/PlatformDefaults.h>
 
 #include <AudioAllocators.h>
-#include <AudioLogger.h>
 
 #include <Engine/AmplitudeAudioSystem.h>
 
-namespace Audio
-{
-    CAudioLogger gAudioSystemLogger;
-} // namespace Audio
 
 namespace SparkyStudios::Audio::Amplitude
 {
@@ -131,20 +127,16 @@ namespace SparkyStudios::Audio::Amplitude
         _amplitudeEngine = AZStd::make_unique<::Audio::AmplitudeAudioSystem>(assetPlatform.c_str());
         if (_amplitudeEngine)
         {
-            ::Audio::gAudioSystemLogger.Log(::Audio::eALT_ALWAYS, "Amplitude AudioEngine created!");
+            AZLOG_NOTICE("Amplitude AudioEngine created!");
 
-            ::Audio::SAudioRequest oAudioRequestData;
-            oAudioRequestData.nFlags = (::Audio::eARF_PRIORITY_HIGH | ::Audio::eARF_EXECUTE_BLOCKING);
-
-            ::Audio::SAudioManagerRequestData<::Audio::eAMRT_INIT_AUDIO_IMPL> oAMData;
-            oAudioRequestData.pData = &oAMData;
-            ::Audio::AudioSystemRequestBus::Broadcast(&::Audio::AudioSystemRequestBus::Events::PushRequestBlocking, oAudioRequestData);
+            ::Audio::SystemRequest::Initialize initAudio;
+            AZ::Interface<::Audio::IAudioSystem>::Get()->PushRequestBlocking(AZStd::move(initAudio));
 
             result = true;
         }
         else
         {
-            ::Audio::gAudioSystemLogger.Log(::Audio::eALT_ALWAYS, "Could not create Amplitude AudioEngine!");
+            AZLOG_NOTICE("Could not create Amplitude AudioEngine!");
         }
 
         return result;

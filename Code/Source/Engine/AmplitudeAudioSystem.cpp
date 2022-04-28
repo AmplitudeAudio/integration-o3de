@@ -14,17 +14,15 @@
 
 #include <platform.h>
 
-#include <AzCore/AzCore_Traits_Platform.h>
+#include <AzCore/Console/ILogger.h>
 #include <AzCore/Debug/Profiler.h>
 #include <AzCore/IO/FileIO.h>
 #include <AzCore/PlatformIncl.h>
 #include <AzCore/StringFunc/StringFunc.h>
 #include <AzCore/Utils/Utils.h>
-#include <AzCore/std/containers/set.h>
 #include <AzCore/std/string/conversions.h>
 
 #include <AudioAllocators.h>
-#include <AudioLogger.h>
 #include <IAudioSystem.h>
 
 #include <Config.h>
@@ -37,8 +35,6 @@ using namespace SparkyStudios::Audio::Amplitude;
 
 namespace Audio
 {
-    extern CAudioLogger gAudioSystemLogger;
-
     namespace Amplitude::Memory
     {
         AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size)
@@ -80,7 +76,7 @@ namespace Audio
 
     namespace Amplitude::Log
     {
-        static void Write(AmString format, va_list args)
+        static void Write(const char* format, va_list args)
         {
             if (format && format[0] != '\0')
             {
@@ -91,7 +87,7 @@ namespace Audio
 
                 buffer[BUFFER_LEN - 1] = '\0';
 
-                Audio::Log::PrintMsg(eALT_ALWAYS, buffer);
+                AZLOG_NOTICE("%s", buffer);
             }
         }
     } // namespace Amplitude::Log
@@ -117,6 +113,7 @@ namespace Audio
         : m_globalGameObjectID(static_cast<AmEntityID>(GLOBAL_AUDIO_OBJECT_ID))
         , m_defaultListenerGameObjectID(kAmInvalidObjectId)
         , m_initBankID(kAmInvalidObjectId)
+        , m_isCommSystemInitialized(false)
         , _fileLoader()
         , _engine(Engine::GetInstance())
     {
@@ -128,14 +125,14 @@ namespace Audio
         SetBankPaths();
 
 #if !defined(AMPLITUDE_RELEASE)
-        m_fullImplString = AZStd::string::format("%s (%s)", SparkyStudios::Audio::Amplitude::Version().text, m_soundbankFolder.c_str());
+        m_fullImplString = AZStd::string::format("%s (%s)", SparkyStudios::Audio::Amplitude::Version().text.c_str(), m_soundbankFolder.c_str());
 
-        // Set up memory categories for debug tracking, do this early before initializing Amplitude so they are available
-        // before the any allocations through hooks occur.
-        gAudioSystemLogger.Log(eALT_COMMENT, "Memory Categories:\n");
-        m_debugMemoryInfo.reserve(AM_MEM_POOLS_COUNT + 1);
+        // Set up memory categories for debug tracking, do this early before initializing Amplitude, so they are available
+        // before any allocations through hooks occur.
+        AZLOG_DEBUG("Memory Categories:");
+        m_debugMemoryInfo.reserve(AM_MEM_POOLS_COUNT);
 
-        for (AZ::u32 memId = 0; memId < AM_MEM_POOLS_COUNT; ++memId)
+        for (AZ::s32 memId = 0; memId < AM_MEM_POOLS_COUNT; ++memId)
         {
             AudioImplMemoryPoolInfo memInfo;
             azstrcpy(memInfo.m_poolName, sizeof(memInfo.m_poolName), MemoryManagerPools[memId]);
@@ -143,7 +140,7 @@ namespace Audio
 
             m_debugMemoryInfo.push_back(memInfo);
 
-            gAudioSystemLogger.Log(eALT_COMMENT, "Memory category ID: %u - '%s'\n", memId, MemoryManagerPools[memId]);
+            AZLOG_DEBUG("Memory category ID: %u - '%s'", memId, MemoryManagerPools[memId]);
         }
 
         // Add one more category for global stats.
@@ -200,18 +197,6 @@ namespace Audio
 
     void AmplitudeAudioSystem::OnAudioSystemRefresh()
     {
-        // bool result = _engine->Deinitialize();
-
-        // if (!result)
-        // {
-        //     gAudioSystemLogger.Log(eALT_ERROR, "Amplitude failed to load %s", InitBankFile);
-        //     m_initBankID = kAmInvalidObjectId;
-        //     AZ_Assert(false, "<Amplitude> Failed to load %s !", InitBankFile);
-        //     return;
-        // }
-
-        // Initialize();
-
         if (_engine->IsInitialized())
         {
             if (m_initBankID != kAmInvalidObjectId)
@@ -219,11 +204,9 @@ namespace Audio
                 _engine->UnloadSoundBank(m_initBankID);
             }
 
-            bool result = _engine->LoadSoundBank(AM_STRING_TO_OS_STRING(InitBankFile), m_initBankID);
-
-            if (!result)
+            if (!_engine->LoadSoundBank(AM_STRING_TO_OS_STRING(InitBankFile), m_initBankID))
             {
-                gAudioSystemLogger.Log(eALT_ERROR, "Amplitude failed to load %s", InitBankFile);
+                AZLOG_ERROR("Amplitude failed to load %s", InitBankFile);
                 m_initBankID = kAmInvalidObjectId;
                 AZ_Assert(false, "<Amplitude> Failed to load %s !", InitBankFile);
             }
@@ -264,9 +247,9 @@ namespace Audio
 
         if (amMemory == nullptr)
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "Amplitude::MemoryManager::Init() has failed.");
+            AZLOG_ERROR("Amplitude::MemoryManager::Init() has failed.");
             ShutDown();
-            return eARS_FAILURE;
+            return EAudioRequestStatus::Failure;
         }
 
         // TODO: Audio device status callback
@@ -275,15 +258,15 @@ namespace Audio
 
         if (!_engine->Initialize(AM_OS_STRING("audio_config.amconfig")))
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "Amplitude Engine has failed to initialize.");
+            AZLOG_ERROR("Amplitude Engine has failed to initialize.");
             ShutDown();
-            return eARS_FAILURE;
+            return EAudioRequestStatus::Failure;
         }
 
         m_globalGameObject = _engine->AddEntity(m_globalGameObjectID);
         if (!m_globalGameObject.Valid())
         {
-            gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::AddEntity() failed.");
+            AZLOG_WARN("Amplitude::Engine::AddEntity() failed.");
         }
 
         bool result = _engine->LoadSoundBank(AM_STRING_TO_OS_STRING(InitBankFile));
@@ -291,12 +274,12 @@ namespace Audio
 
         if (!result)
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "Amplitude failed to load %s", InitBankFile);
+            AZLOG_ERROR("Amplitude failed to load %s", InitBankFile);
             m_initBankID = kAmInvalidObjectId;
             AZ_Assert(false, "<Amplitude> Failed to load %s !", InitBankFile);
         }
 
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::ShutDown()
@@ -310,7 +293,7 @@ namespace Audio
 
             if (m_globalGameObject.Valid())
             {
-                gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::RemoveEntity() failed.");
+                AZLOG_WARN("Amplitude::Engine::RemoveEntity() failed.");
             }
 
             _engine->UnloadSoundBanks();
@@ -324,13 +307,13 @@ namespace Audio
             SparkyStudios::Audio::Amplitude::MemoryManager::Deinitialize();
         }
 
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::Release()
     {
         // Deleting this object and destroying the allocator has been moved to AudioEngineWwiseSystemComponent
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::StopAllSounds()
@@ -338,10 +321,10 @@ namespace Audio
         if (_engine->IsInitialized())
         {
             _engine->StopAll();
-            return eARS_SUCCESS;
+            return EAudioRequestStatus::Success;
         }
 
-        return eARS_NONE;
+        return EAudioRequestStatus::Failure;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::RegisterAudioObject(
@@ -355,15 +338,15 @@ namespace Audio
 
             if (!entity.Valid())
             {
-                gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::AddEntity() failed.");
+                AZLOG_WARN("Amplitude::Engine::AddEntity() failed.");
             }
 
             return BoolToARS(entity.Valid());
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::AddEntity() failed, audio object data was null.");
-            return eARS_FAILURE;
+            AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
+            return EAudioRequestStatus::Failure;
         }
     }
 
@@ -378,15 +361,15 @@ namespace Audio
 
             if (entity.Valid())
             {
-                gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::RemoveEntity() failed.");
+                AZLOG_WARN("Amplitude::Engine::RemoveEntity() failed.");
             }
 
             return BoolToARS(!entity.Valid());
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::AddEntity() failed, audio object data was null.");
-            return eARS_FAILURE;
+            AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
+            return EAudioRequestStatus::Failure;
         }
     }
 
@@ -399,12 +382,12 @@ namespace Audio
             implObjectData->cEnvironmentImplAmounts.clear();
             implObjectData->bNeedsToUpdateEnvironments = false;
 
-            return eARS_SUCCESS;
+            return EAudioRequestStatus::Success;
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_WARNING, "Amplitude::Engine::AddEntity() failed, audio object data was null.");
-            return eARS_FAILURE;
+            AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
+            return EAudioRequestStatus::Failure;
         }
     }
 
@@ -412,7 +395,7 @@ namespace Audio
     {
         AZ_PROFILE_FUNCTION(Audio);
 
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         if (audioObjectData)
         {
@@ -433,7 +416,7 @@ namespace Audio
         CallLogFunc("Prep trigger sync");
 
         // return PrepUnprepTriggerSync(triggerData, true);
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::UnprepareTriggerSync(
@@ -442,7 +425,7 @@ namespace Audio
         CallLogFunc("Unprep trigger sync");
 
         // return PrepUnprepTriggerSync(triggerData, false);
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::PrepareTriggerAsync(
@@ -453,7 +436,7 @@ namespace Audio
         CallLogFunc("Prep trigger async");
 
         // return PrepUnprepTriggerAsync(triggerData, eventData, true);
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::UnprepareTriggerAsync(
@@ -464,7 +447,7 @@ namespace Audio
         CallLogFunc("Unprep trigger async");
 
         // return PrepUnprepTriggerAsync(triggerData, eventData, false);
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::ActivateTrigger(
@@ -473,15 +456,15 @@ namespace Audio
         IATLEventData* const eventData,
         const SATLSourceData* const sourceData)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
-        const auto implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
-        const auto implTriggerData = static_cast<const SATLTriggerImplData_Amplitude*>(triggerData);
-        const auto implEventData = static_cast<SATLEventData_Amplitude*>(eventData);
+        const auto* implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+        const auto* implTriggerData = dynamic_cast<const SATLTriggerImplData_Amplitude*>(triggerData);
 
-        if (implObjectData && implTriggerData && implEventData)
+        if (auto* const implEventData = dynamic_cast<SATLEventData_Amplitude*>(eventData);
+            implObjectData && implTriggerData && implEventData)
         {
-            AmEntityID entityId = kAmInvalidObjectId;
+            AmEntityID entityId;
 
             if (implObjectData->bHasPosition)
             {
@@ -506,7 +489,7 @@ namespace Audio
                 [[fallthrough]];
             default:
                 {
-                    Entity entity = _engine->GetEntity(entityId);
+                    const Entity entity = _engine->GetEntity(entityId);
 #if !defined(AMPLITUDE_RELEASE)
                     if (entityId != kAmInvalidObjectId && !entity.Valid())
                     {
@@ -514,21 +497,18 @@ namespace Audio
                     }
 #endif
 
-                    const EventHandle event = _engine->GetEventHandle(implTriggerData->nAmID);
-                    if (event)
+                    if (const EventHandle event = _engine->GetEventHandle(implTriggerData->nAmID))
                     {
-                        EventCanceler canceler = _engine->Trigger(event, entity);
-                        if (canceler.Valid())
+                        if (const EventCanceler canceler = _engine->Trigger(event, entity); canceler.Valid())
                         {
                             implEventData->audioEventState = eAES_PLAYING;
                             implEventData->eventCanceler = canceler;
-                            result = eARS_SUCCESS;
+                            result = EAudioRequestStatus::Success;
                         }
                     }
                     else
                     {
-                        gAudioSystemLogger.Log(
-                            eALT_WARNING,
+                        AZLOG_WARN(
                             "[Amplitude] Unable to activate a trigger, the associated Amplitude event with ID %l has not been found in "
                             "loaded banks.",
                             implTriggerData->nAmID);
@@ -539,9 +519,7 @@ namespace Audio
         }
         else
         {
-            gAudioSystemLogger.Log(
-                eALT_ERROR,
-                "Invalid AudioObjectData, ATLTriggerData or EventData passed to the Amplitude implementation of ActivateTrigger.");
+            AZLOG_ERROR("Invalid AudioObjectData, ATLTriggerData or EventData passed to the Amplitude implementation of ActivateTrigger.");
         }
 
         return result;
@@ -550,11 +528,9 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::StopEvent(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLEventData* const eventData)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
-        auto const implEventData = static_cast<const SATLEventData_Amplitude*>(eventData);
-
-        if (implEventData)
+        if (auto* const implEventData = dynamic_cast<const SATLEventData_Amplitude*>(eventData))
         {
             switch (implEventData->audioEventState)
             {
@@ -563,24 +539,24 @@ namespace Audio
                     if (implEventData->eventCanceler.Valid())
                     {
                         implEventData->eventCanceler.Cancel();
-                        result = eARS_SUCCESS;
+                        result = EAudioRequestStatus::Success;
                     }
                     else
                     {
-                        gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Encountered a running event without a valid canceler.");
+                        AZLOG_ERROR("[Amplitude] Encountered a running event without a valid canceler.");
                     }
                     break;
                 }
             default:
                 {
-                    gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Stopping an event of this type is not supported yet");
+                    AZLOG_ERROR("[Amplitude] Stopping an event of this type is not supported yet");
                     break;
                 }
             }
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid EventData passed to StopEvent.");
+            AZLOG_ERROR("[Amplitude] Invalid EventData passed to StopEvent.");
         }
 
         return result;
@@ -589,21 +565,17 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::StopAllEvents([[maybe_unused]] IATLAudioObjectData* const audioObjectData)
     {
         // TODO: Cancel all events
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::SetPosition(
         IATLAudioObjectData* const audioObjectData, const SATLWorldPosition& worldPosition)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
-        auto const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
-
-        if (implObjectData)
+        if (const auto* implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData))
         {
-            Entity entity = _engine->GetEntity(implObjectData->nAmID);
-
-            if (entity.Valid())
+            if (Entity entity = _engine->GetEntity(implObjectData->nAmID); entity.Valid())
             {
                 entity.SetLocation(ATLVec3ToAmVec3(worldPosition.GetPositionVec()));
                 entity.SetOrientation(
@@ -612,14 +584,14 @@ namespace Audio
             }
             else
             {
-                gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid AudioObjectData passed to SetPosition.");
+                AZLOG_ERROR("[Amplitude] Invalid AudioObjectData passed to SetPosition.");
             }
 
-            result = eARS_SUCCESS;
+            result = EAudioRequestStatus::Success;
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid AudioObjectData passed to SetPosition.");
+            AZLOG_ERROR("[Amplitude] Invalid AudioObjectData passed to SetPosition.");
         }
 
         return result;
@@ -629,7 +601,7 @@ namespace Audio
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, [[maybe_unused]] const MultiPositionParams& multiPositionParams)
     {
         // TODO: Not yet supported
-        return eARS_SUCCESS;
+        return EAudioRequestStatus::Success;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::SetEnvironment(
@@ -637,12 +609,12 @@ namespace Audio
     {
         static const float s_envEpsilon = 0.0001f;
 
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
-        auto* const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
-        const auto* implEnvironmentData = static_cast<const SATLEnvironmentImplData_Amplitude*>(environmentData);
+        const auto* implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
-        if (implObjectData && implEnvironmentData)
+        if (const auto* implEnvironmentData = static_cast<const SATLEnvironmentImplData_Amplitude*>(environmentData);
+            implObjectData && implEnvironmentData)
         {
             switch (implEnvironmentData->eType)
             {
@@ -655,7 +627,7 @@ namespace Audio
                         // TODO: Set gain? Per object bus gain?
                     }
 
-                    result = eARS_SUCCESS;
+                    result = EAudioRequestStatus::Success;
                     break;
                 }
             case eAAET_SWITCH:
@@ -666,7 +638,7 @@ namespace Audio
                         // TODO: Per object switch state?
                     }
 
-                    result = eARS_SUCCESS;
+                    result = EAudioRequestStatus::Success;
                     break;
                 }
             case eAAET_EFFECT:
@@ -681,7 +653,7 @@ namespace Audio
 
                     entity.SetEnvironmentFactor(env.GetId(), amount);
 
-                    result = eARS_SUCCESS;
+                    result = EAudioRequestStatus::Success;
                     break;
                 }
             default:
@@ -692,7 +664,7 @@ namespace Audio
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid AudioObjectData or EnvironmentData passed to SetEnvironment");
+            AZLOG_ERROR("[Amplitude] Invalid AudioObjectData or EnvironmentData passed to SetEnvironment");
         }
 
         return result;
@@ -701,18 +673,18 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetRtpc(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLRtpcImplData* const rtpcData, const float value)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         const auto* implRtpcData = static_cast<const SATLRtpcImplData_Amplitude*>(rtpcData);
 
         if (implRtpcData)
         {
             _engine->SetRtpcValue(implRtpcData->nAmID, value);
-            result = eARS_SUCCESS;
+            result = EAudioRequestStatus::Success;
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid AudioObjectData or RtpcData passed to SetRtpc");
+            AZLOG_ERROR("[Amplitude] Invalid AudioObjectData or RtpcData passed to SetRtpc");
         }
 
         return result;
@@ -721,18 +693,18 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetSwitchState(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLSwitchStateImplData* const switchStateData)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         const auto* implSwitchData = static_cast<const SATLSwitchStateImplData_Amplitude*>(switchStateData);
 
         if (implSwitchData)
         {
             _engine->SetSwitchState(implSwitchData->nAmSwitchID, implSwitchData->nAmStateID);
-            result = eARS_SUCCESS;
+            result = EAudioRequestStatus::Success;
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid AudioObjectData or RtpcData passed to SetRtpc");
+            AZLOG_ERROR("[Amplitude] Invalid AudioObjectData or RtpcData passed to SetRtpc");
         }
 
         return result;
@@ -749,24 +721,23 @@ namespace Audio
 
             if (!entity.Valid())
             {
-                gAudioSystemLogger.Log(
-                    eALT_WARNING, "[Amplitude] Amplitude::Engine::GetEntity() failed with entity ID %lu", implObjectData->nAmID);
+                AZLOG_WARN("[Amplitude] Amplitude::Engine::GetEntity() failed with entity ID %lu", implObjectData->nAmID);
             }
 
             entity.SetObstruction(obstruction);
             entity.SetOcclusion(occlusion);
 
-            return eARS_SUCCESS;
+            return EAudioRequestStatus::Success;
         }
 
-        gAudioSystemLogger.Log(eALT_WARNING, "[Amplitude] Amplitude::Engine::GetEntity() failed, audio object data was null.");
-        return eARS_FAILURE;
+        AZLOG_WARN("[Amplitude] Amplitude::Engine::GetEntity() failed, audio object data was null.");
+        return EAudioRequestStatus::Failure;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::SetListenerPosition(
         IATLListenerData* const listenerData, const SATLWorldPosition& newPosition)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         auto const implObjectData = static_cast<SATLListenerData_Amplitude*>(listenerData);
 
@@ -779,16 +750,16 @@ namespace Audio
                 listener.SetOrientation(
                     ATLVec3ToAmVec3(newPosition.GetForwardVec().GetNormalized()), ATLVec3ToAmVec3(newPosition.GetUpVec().GetNormalized()));
 
-                result = eARS_SUCCESS;
+                result = EAudioRequestStatus::Success;
             }
             else
             {
-                gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid ListenerData passed to SetPosition.");
+                AZLOG_ERROR("[Amplitude] Invalid ListenerData passed to SetPosition.");
             }
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid IATLListenerData passed to SetPosition.");
+            AZLOG_ERROR("[Amplitude] Invalid IATLListenerData passed to SetPosition.");
         }
 
         return result;
@@ -797,7 +768,7 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::ResetRtpc(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLRtpcImplData* const rtpcData)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         auto const implRtpcData = static_cast<const SATLRtpcImplData_Amplitude*>(rtpcData);
 
@@ -807,7 +778,7 @@ namespace Audio
             if (rtpc)
             {
                 rtpc->Reset();
-                result = eARS_SUCCESS;
+                result = EAudioRequestStatus::Success;
             }
             else
             {
@@ -816,7 +787,7 @@ namespace Audio
         }
         else
         {
-            gAudioSystemLogger.Log(eALT_ERROR, "[Amplitude] Invalid AudioObjectData or RtpcData passed to SetRtpc");
+            AZLOG_ERROR("[Amplitude] Invalid AudioObjectData or RtpcData passed to SetRtpc");
         }
 
         return result;
@@ -824,7 +795,7 @@ namespace Audio
 
     EAudioRequestStatus AmplitudeAudioSystem::RegisterInMemoryFile(SATLAudioFileEntryInfo* const audioFileEntry)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         if (audioFileEntry)
         {
@@ -840,17 +811,17 @@ namespace Audio
                 if (success)
                 {
                     implFileEntryData->nAmBankID = bankId;
-                    result = eARS_SUCCESS;
+                    result = EAudioRequestStatus::Success;
                 }
                 else
                 {
                     implFileEntryData->nAmBankID = kAmInvalidObjectId;
-                    gAudioSystemLogger.Log(eALT_ERROR, "Amplitude failed to load soundbank '%s'\n", audioFileEntry->sFileName);
+                    AZLOG_ERROR("Amplitude failed to load soundbank '%s'\n", audioFileEntry->sFileName);
                 }
             }
             else
             {
-                gAudioSystemLogger.Log(eALT_ERROR, "Invalid AudioFileEntryData passed to RegisterInMemoryFile");
+                AZLOG_ERROR("Invalid AudioFileEntryData passed to RegisterInMemoryFile");
             }
         }
 
@@ -859,7 +830,7 @@ namespace Audio
 
     EAudioRequestStatus AmplitudeAudioSystem::UnregisterInMemoryFile(SATLAudioFileEntryInfo* const audioFileEntry)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         if (audioFileEntry)
         {
@@ -870,11 +841,11 @@ namespace Audio
                 _engine->UnloadSoundBank(implFileEntryData->nAmBankID);
 
                 // TODO: Always success ?
-                result = eARS_SUCCESS;
+                result = EAudioRequestStatus::Success;
             }
             else
             {
-                gAudioSystemLogger.Log(eALT_ERROR, "Invalid AudioFileEntryData passed to UnregisterInMemoryFile");
+                AZLOG_ERROR("Invalid AudioFileEntryData passed to UnregisterInMemoryFile");
             }
         }
 
@@ -884,7 +855,7 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::ParseAudioFileEntry(
         const AZ::rapidxml::xml_node<char>* audioFileEntryNode, SATLAudioFileEntryInfo* const fileEntryInfo)
     {
-        EAudioRequestStatus result = eARS_FAILURE;
+        EAudioRequestStatus result = EAudioRequestStatus::Failure;
 
         if (audioFileEntryNode && azstricmp(audioFileEntryNode->name(), XmlTags::FileTag) == 0 && fileEntryInfo)
         {
@@ -920,7 +891,7 @@ namespace Audio
                 fileEntryInfo->nMemoryBlockAlignment = AM_SIMD_ALIGNMENT;
                 fileEntryInfo->pImplData = azcreate(
                     SATLAudioFileEntryData_Amplitude, (audioFileEntryId), Audio::AudioImplAllocator, "ATLAudioFileEntryData_Amplitude");
-                result = eARS_SUCCESS;
+                result = EAudioRequestStatus::Success;
             }
             else
             {
@@ -1153,7 +1124,7 @@ namespace Audio
             }
             else
             {
-                gAudioSystemLogger.Log(eALT_WARNING, "Amplitude failed in registering a default Listener.");
+                AZLOG_WARN("Amplitude failed in registering a default Listener.");
             }
         }
 
@@ -1170,7 +1141,7 @@ namespace Audio
             Listener listener = _engine->AddListener(newObjectData->nAmListenerObjectId);
             if (!listener.Valid())
             {
-                gAudioSystemLogger.Log(eALT_WARNING, "Amplitude failed in registering a Listener.");
+                AZLOG_WARN("Amplitude failed in registering a Listener.");
             }
         }
 
@@ -1231,7 +1202,7 @@ namespace Audio
         return m_fullImplString.c_str();
 #else
         return nullptr;
-#endif // !WWISE_RELEASE
+#endif // !AMPLITUDE_RELEASE
     }
 
     void AmplitudeAudioSystem::GetMemoryInfo(SAudioImplMemoryInfo& memoryInfo) const
@@ -1259,10 +1230,10 @@ namespace Audio
 
             const MemoryPoolStats& poolStats = amMemory->GetStats(static_cast<MemoryPoolKind>(memInfo.m_poolId));
 
-            memInfo.m_memoryUsed = static_cast<AZ::u32>(poolStats.maxMemoryUsed);
+            memInfo.m_memoryUsed = static_cast<AZ::u32>(poolStats.maxMemoryUsed.load());
             memInfo.m_peakUsed = 0;
-            memInfo.m_numAllocs = poolStats.allocCount;
-            memInfo.m_numFrees = poolStats.freeCount;
+            memInfo.m_numAllocs = static_cast<AZ::u32>(poolStats.allocCount.load());
+            memInfo.m_numFrees = static_cast<AZ::u32>(poolStats.freeCount.load());
         }
 
         // TODO: Global stats
