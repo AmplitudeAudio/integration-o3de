@@ -23,10 +23,10 @@
 
 #include <SparkyStudios/Audio/Amplitude/Amplitude.h>
 
-using namespace SparkyStudios::Audio::Amplitude;
-
 namespace Audio
 {
+    using namespace SparkyStudios::Audio::Amplitude;
+
     using TAmUniqueIDVector = AZStd::vector<AmObjectID, AudioImplStdAllocator>;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////

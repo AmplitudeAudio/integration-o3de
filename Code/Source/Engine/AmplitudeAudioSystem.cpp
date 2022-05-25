@@ -31,73 +31,72 @@
 
 using namespace SparkyStudios::Audio::Amplitude;
 
-#define AM_MEM_POOLS_COUNT static_cast<size_t>(SparkyStudios::Audio::Amplitude::MemoryPoolKind::COUNT)
+#define AM_MEM_POOLS_COUNT static_cast<size_t>(MemoryPoolKind::COUNT)
 
 namespace Audio
 {
-    namespace Amplitude::Memory
+    namespace Amplitude
     {
-        AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size)
+        namespace Memory
         {
-            return AZ::AllocatorInstance<AudioImplAllocator>::Get().Allocate(size, 0, 0, MemoryManagerPools[static_cast<AmUInt8>(pool)]);
-        }
-
-        AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment)
-        {
-            return AZ::AllocatorInstance<AudioImplAllocator>::Get().Allocate(
-                size, alignment, 0, MemoryManagerPools[static_cast<AmUInt8>(pool)]);
-        }
-
-        AmVoidPtr Realloc([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address, AmSize size)
-        {
-            return AZ::AllocatorInstance<AudioImplAllocator>::Get().ReAllocate(address, size, 0);
-        }
-
-        AmVoidPtr Realign([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment)
-        {
-            return AZ::AllocatorInstance<AudioImplAllocator>::Get().ReAllocate(address, size, alignment);
-        }
-
-        void Free([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address)
-        {
-            AZ::AllocatorInstance<AudioImplAllocator>::Get().DeAllocate(address);
-        }
-
-        AmSize TotalMemorySize()
-        {
-            return AZ::AllocatorInstance<AudioImplAllocator>::Get().Capacity();
-        }
-
-        AmSize SizeOfMemory([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address)
-        {
-            return AZ::AllocatorInstance<AudioImplAllocator>::Get().AllocationSize(address);
-        }
-    } // namespace Amplitude::Memory
-
-    namespace Amplitude::Log
-    {
-        static void Write(const char* format, va_list args)
-        {
-            if (format && format[0] != '\0')
+            AmVoidPtr Malloc(MemoryPoolKind pool, AmSize size)
             {
-                const size_t BUFFER_LEN = 1024;
-                char buffer[BUFFER_LEN] = "[Amplitude] ";
-
-                azvsnprintf(buffer + 12, BUFFER_LEN - 12, format, args);
-
-                buffer[BUFFER_LEN - 1] = '\0';
-
-                AZLOG_NOTICE("%s", buffer);
+                return AZ::AllocatorInstance<AudioImplAllocator>::Get().Allocate(
+                    size, 0, 0, gMemoryManagerPools[static_cast<AmUInt8>(pool)]);
             }
-        }
-    } // namespace Amplitude::Log
 
-    const char* const AmplitudeAudioSystem::AmplitudeImplSubPath = "amplitude_assets/";
-    const char* const AmplitudeAudioSystem::AmplitudeGlobalAudioObjectName = "AM-GlobalAudioObject";
-    const float AmplitudeAudioSystem::ObstructionOcclusionMin = 0.0f;
-    const float AmplitudeAudioSystem::ObstructionOcclusionMax = 1.0f;
+            AmVoidPtr Malign(MemoryPoolKind pool, AmSize size, AmUInt32 alignment)
+            {
+                return AZ::AllocatorInstance<AudioImplAllocator>::Get().Allocate(
+                    size, alignment, 0, gMemoryManagerPools[static_cast<AmUInt8>(pool)]);
+            }
 
-    static bool audioDeviceInitializationEvent = false;
+            AmVoidPtr Realloc([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address, AmSize size)
+            {
+                return AZ::AllocatorInstance<AudioImplAllocator>::Get().ReAllocate(address, size, 0);
+            }
+
+            AmVoidPtr Realign([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address, AmSize size, AmUInt32 alignment)
+            {
+                return AZ::AllocatorInstance<AudioImplAllocator>::Get().ReAllocate(address, size, alignment);
+            }
+
+            void Free([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address)
+            {
+                AZ::AllocatorInstance<AudioImplAllocator>::Get().DeAllocate(address);
+            }
+
+            AmSize TotalMemorySize()
+            {
+                return AZ::AllocatorInstance<AudioImplAllocator>::Get().Capacity();
+            }
+
+            AmSize SizeOfMemory([[maybe_unused]] MemoryPoolKind pool, AmVoidPtr address)
+            {
+                return AZ::AllocatorInstance<AudioImplAllocator>::Get().AllocationSize(address);
+            }
+        } // namespace Memory
+
+        namespace Log
+        {
+            static void Write(const char* format, va_list args)
+            {
+                if (format && format[0] != '\0')
+                {
+                    constexpr size_t bufferLen = 1024;
+                    char buffer[bufferLen] = "[Amplitude] ";
+
+                    azvsnprintf(buffer + 12, bufferLen - 12, format, args);
+
+                    buffer[bufferLen - 1] = '\0';
+
+                    AZLOG_NOTICE("%s", buffer);
+                }
+            }
+        } // namespace Log
+    } // namespace Amplitude
+
+    static bool gAudioDeviceInitializationEvent = false;
 
     static int GetAssetType(const SATLSourceData* sourceData)
     {
@@ -110,12 +109,14 @@ namespace Audio
     }
 
     AmplitudeAudioSystem::AmplitudeAudioSystem(const char* assetsPlatformName)
-        : m_globalGameObjectID(static_cast<AmEntityID>(GLOBAL_AUDIO_OBJECT_ID))
-        , m_defaultListenerGameObjectID(kAmInvalidObjectId)
-        , m_initBankID(kAmInvalidObjectId)
-        , m_isCommSystemInitialized(false)
+        : _globalGameObjectId(GLOBAL_AUDIO_OBJECT_ID)
+        , _defaultListenerGameObjectId(kAmInvalidObjectId)
+        , _initBankId(kAmInvalidObjectId)
         , _fileLoader()
         , _engine(Engine::GetInstance())
+#if !defined(AMPLITUDE_RELEASE)
+        , _isCommSystemInitialized(false)
+#endif // !AMPLITUDE_RELEASE
     {
         if (assetsPlatformName && assetsPlatformName[0] != '\0')
         {
@@ -125,28 +126,29 @@ namespace Audio
         SetBankPaths();
 
 #if !defined(AMPLITUDE_RELEASE)
-        m_fullImplString = AZStd::string::format("%s (%s)", SparkyStudios::Audio::Amplitude::Version().text.c_str(), m_soundbankFolder.c_str());
+        _fullImplString =
+            AZStd::string::format("%s (%s)", SparkyStudios::Audio::Amplitude::Version().text.c_str(), m_soundbankFolder.c_str());
 
         // Set up memory categories for debug tracking, do this early before initializing Amplitude, so they are available
         // before any allocations through hooks occur.
         AZLOG_DEBUG("Memory Categories:");
-        m_debugMemoryInfo.reserve(AM_MEM_POOLS_COUNT);
+        _debugMemoryInfo.reserve(AM_MEM_POOLS_COUNT);
 
         for (AZ::s32 memId = 0; memId < AM_MEM_POOLS_COUNT; ++memId)
         {
             AudioImplMemoryPoolInfo memInfo;
-            azstrcpy(memInfo.m_poolName, sizeof(memInfo.m_poolName), MemoryManagerPools[memId]);
+            azstrcpy(memInfo.m_poolName, sizeof(memInfo.m_poolName), gMemoryManagerPools[memId]);
             memInfo.m_poolId = memId;
 
-            m_debugMemoryInfo.push_back(memInfo);
+            _debugMemoryInfo.push_back(memInfo);
 
-            AZLOG_DEBUG("Memory category ID: %u - '%s'", memId, MemoryManagerPools[memId]);
+            AZLOG_DEBUG("Memory category ID: %u - '%s'", memId, gMemoryManagerPools[memId]);
         }
 
         // Add one more category for global stats.
         AudioImplMemoryPoolInfo memInfo;
         azstrcpy(memInfo.m_poolName, sizeof(memInfo.m_poolName), "Global");
-        m_debugMemoryInfo.push_back(memInfo);
+        _debugMemoryInfo.push_back(memInfo);
 #endif
 
         AudioSystemImplementationRequestBus::Handler::BusConnect();
@@ -199,16 +201,16 @@ namespace Audio
     {
         if (_engine->IsInitialized())
         {
-            if (m_initBankID != kAmInvalidObjectId)
+            if (_initBankId != kAmInvalidObjectId)
             {
-                _engine->UnloadSoundBank(m_initBankID);
+                _engine->UnloadSoundBank(_initBankId);
             }
 
-            if (!_engine->LoadSoundBank(AM_STRING_TO_OS_STRING(InitBankFile), m_initBankID))
+            if (!_engine->LoadSoundBank(AM_STRING_TO_OS_STRING(kInitBankFile), _initBankId))
             {
-                AZLOG_ERROR("Amplitude failed to load %s", InitBankFile);
-                m_initBankID = kAmInvalidObjectId;
-                AZ_Assert(false, "<Amplitude> Failed to load %s !", InitBankFile);
+                AZLOG_ERROR("Amplitude failed to load %s", kInitBankFile);
+                _initBankId = kAmInvalidObjectId;
+                AZ_Assert(false, "[Amplitude] Failed to load %s !", kInitBankFile);
             }
         }
         else
@@ -217,22 +219,22 @@ namespace Audio
         }
     }
 
-    void AmplitudeAudioSystem::Update(const float updateIntervalMS)
+    void AmplitudeAudioSystem::Update(const float updateIntervalMs)
     {
         AZ_PROFILE_FUNCTION(Audio);
 
         if (_engine->IsInitialized())
         {
-            _engine->AdvanceFrame(updateIntervalMS / kAmSecond);
+            _engine->AdvanceFrame(static_cast<AmTime>(updateIntervalMs) / kAmSecond);
         }
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::Initialize()
     {
-        RegisterLogFunc(Audio::Amplitude::Log::Write);
+        RegisterLogFunc(Amplitude::Log::Write);
 
-        AZ::IO::FixedMaxPath projectPath(AZ::Utils::GetProjectPath());
-        _fileLoader.SetBasePath((projectPath / AssetsRootPath).Native().c_str());
+        const AZ::IO::FixedMaxPath projectPath(AZ::Utils::GetProjectPath());
+        _fileLoader.SetBasePath((projectPath / kAssetsRootPath).Native().c_str());
 
         MemoryManagerConfig amMemConfig;
         amMemConfig.malloc = Amplitude::Memory::Malloc;
@@ -263,20 +265,20 @@ namespace Audio
             return EAudioRequestStatus::Failure;
         }
 
-        m_globalGameObject = _engine->AddEntity(m_globalGameObjectID);
-        if (!m_globalGameObject.Valid())
+        _globalGameObject = _engine->AddEntity(_globalGameObjectId);
+        if (!_globalGameObject.Valid())
         {
             AZLOG_WARN("Amplitude::Engine::AddEntity() failed.");
         }
 
-        bool result = _engine->LoadSoundBank(AM_STRING_TO_OS_STRING(InitBankFile));
-        m_initBankID = 1;
+        const bool result = _engine->LoadSoundBank(AM_STRING_TO_OS_STRING(kInitBankFile));
+        _initBankId = 1;
 
         if (!result)
         {
-            AZLOG_ERROR("Amplitude failed to load %s", InitBankFile);
-            m_initBankID = kAmInvalidObjectId;
-            AZ_Assert(false, "<Amplitude> Failed to load %s !", InitBankFile);
+            AZLOG_ERROR("Amplitude failed to load %s", kInitBankFile);
+            _initBankId = kAmInvalidObjectId;
+            AZ_Assert(false, "<Amplitude> Failed to load %s !", kInitBankFile);
         }
 
         return EAudioRequestStatus::Success;
@@ -289,9 +291,9 @@ namespace Audio
         if (_engine->IsInitialized())
         {
             // UnRegister the DummyGameObject
-            _engine->RemoveEntity(&m_globalGameObject);
+            _engine->RemoveEntity(&_globalGameObject);
 
-            if (m_globalGameObject.Valid())
+            if (_globalGameObject.Valid())
             {
                 AZLOG_WARN("Amplitude::Engine::RemoveEntity() failed.");
             }
@@ -302,9 +304,9 @@ namespace Audio
         }
 
         // Terminate the Memory Manager
-        if (SparkyStudios::Audio::Amplitude::MemoryManager::IsInitialized())
+        if (MemoryManager::IsInitialized())
         {
-            SparkyStudios::Audio::Amplitude::MemoryManager::Deinitialize();
+            MemoryManager::Deinitialize();
         }
 
         return EAudioRequestStatus::Success;
@@ -312,7 +314,7 @@ namespace Audio
 
     EAudioRequestStatus AmplitudeAudioSystem::Release()
     {
-        // Deleting this object and destroying the allocator has been moved to AudioEngineWwiseSystemComponent
+        // Deleting this object and destroying the allocator has been moved to AmplitudeAudioSystemComponent
         return EAudioRequestStatus::Success;
     }
 
@@ -332,9 +334,9 @@ namespace Audio
     {
         if (audioObjectData && _engine->IsInitialized())
         {
-            auto const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+            const auto* const implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
-            Entity entity = _engine->AddEntity(implObjectData->nAmID);
+            const Entity entity = _engine->AddEntity(implObjectData->nAmID);
 
             if (!entity.Valid())
             {
@@ -343,21 +345,19 @@ namespace Audio
 
             return BoolToARS(entity.Valid());
         }
-        else
-        {
-            AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
-            return EAudioRequestStatus::Failure;
-        }
+
+        AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
+        return EAudioRequestStatus::Failure;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::UnregisterAudioObject(IATLAudioObjectData* const audioObjectData)
     {
         if (audioObjectData && _engine->IsInitialized())
         {
-            auto const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+            const auto* const implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
             _engine->RemoveEntity(implObjectData->nAmID);
-            Entity entity = _engine->GetEntity(implObjectData->nAmID);
+            const Entity entity = _engine->GetEntity(implObjectData->nAmID);
 
             if (entity.Valid())
             {
@@ -366,40 +366,36 @@ namespace Audio
 
             return BoolToARS(!entity.Valid());
         }
-        else
-        {
-            AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
-            return EAudioRequestStatus::Failure;
-        }
+
+        AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
+        return EAudioRequestStatus::Failure;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::ResetAudioObject(IATLAudioObjectData* const audioObjectData)
     {
         if (audioObjectData)
         {
-            auto const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+            auto* const implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
             implObjectData->cEnvironmentImplAmounts.clear();
             implObjectData->bNeedsToUpdateEnvironments = false;
 
             return EAudioRequestStatus::Success;
         }
-        else
-        {
-            AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
-            return EAudioRequestStatus::Failure;
-        }
+
+        AZLOG_WARN("Amplitude::Engine::AddEntity() failed, audio object data was null.");
+        return EAudioRequestStatus::Failure;
     }
 
     EAudioRequestStatus AmplitudeAudioSystem::UpdateAudioObject(IATLAudioObjectData* const audioObjectData)
     {
         AZ_PROFILE_FUNCTION(Audio);
 
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
         if (audioObjectData)
         {
-            auto const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+            const auto* const implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
             if (implObjectData->bNeedsToUpdateEnvironments)
             {
@@ -456,10 +452,10 @@ namespace Audio
         IATLEventData* const eventData,
         const SATLSourceData* const sourceData)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
-        const auto* implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
-        const auto* implTriggerData = dynamic_cast<const SATLTriggerImplData_Amplitude*>(triggerData);
+        const auto* const implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+        const auto* const implTriggerData = dynamic_cast<const SATLTriggerImplData_Amplitude*>(triggerData);
 
         if (auto* const implEventData = dynamic_cast<SATLEventData_Amplitude*>(eventData);
             implObjectData && implTriggerData && implEventData)
@@ -472,7 +468,7 @@ namespace Audio
             }
             else
             {
-                entityId = m_globalGameObjectID;
+                entityId = _globalGameObjectId;
             }
 
             switch (GetAssetType(sourceData))
@@ -528,7 +524,7 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::StopEvent(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLEventData* const eventData)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
         if (auto* const implEventData = dynamic_cast<const SATLEventData_Amplitude*>(eventData))
         {
@@ -571,7 +567,7 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetPosition(
         IATLAudioObjectData* const audioObjectData, const SATLWorldPosition& worldPosition)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
         if (const auto* implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData))
         {
@@ -607,22 +603,18 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetEnvironment(
         IATLAudioObjectData* const audioObjectData, const IATLEnvironmentImplData* const environmentData, const float amount)
     {
-        static const float s_envEpsilon = 0.0001f;
-
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
         const auto* implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
-        if (const auto* implEnvironmentData = static_cast<const SATLEnvironmentImplData_Amplitude*>(environmentData);
+        if (const auto* implEnvironmentData = dynamic_cast<const SATLEnvironmentImplData_Amplitude*>(environmentData);
             implObjectData && implEnvironmentData)
         {
             switch (implEnvironmentData->eType)
             {
             case eAAET_BUS:
                 {
-                    const Bus bus = _engine->FindBus(implEnvironmentData->nAmEnvID);
-
-                    if (bus.Valid())
+                    if (const Bus bus = _engine->FindBus(implEnvironmentData->nAmEnvID); bus.Valid())
                     {
                         // TODO: Set gain? Per object bus gain?
                     }
@@ -673,11 +665,9 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetRtpc(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLRtpcImplData* const rtpcData, const float value)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
-        const auto* implRtpcData = static_cast<const SATLRtpcImplData_Amplitude*>(rtpcData);
-
-        if (implRtpcData)
+        if (const auto* const implRtpcData = dynamic_cast<const SATLRtpcImplData_Amplitude*>(rtpcData))
         {
             _engine->SetRtpcValue(implRtpcData->nAmID, value);
             result = EAudioRequestStatus::Success;
@@ -693,11 +683,9 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetSwitchState(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLSwitchStateImplData* const switchStateData)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
-        const auto* implSwitchData = static_cast<const SATLSwitchStateImplData_Amplitude*>(switchStateData);
-
-        if (implSwitchData)
+        if (const auto* const implSwitchData = dynamic_cast<const SATLSwitchStateImplData_Amplitude*>(switchStateData))
         {
             _engine->SetSwitchState(implSwitchData->nAmSwitchID, implSwitchData->nAmStateID);
             result = EAudioRequestStatus::Success;
@@ -715,7 +703,7 @@ namespace Audio
     {
         if (audioObjectData)
         {
-            auto* const implObjectData = static_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
+            const auto* const implObjectData = dynamic_cast<SATLAudioObjectData_Amplitude*>(audioObjectData);
 
             Entity entity = _engine->GetEntity(implObjectData->nAmID);
 
@@ -737,14 +725,11 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::SetListenerPosition(
         IATLListenerData* const listenerData, const SATLWorldPosition& newPosition)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
-        auto const implObjectData = static_cast<SATLListenerData_Amplitude*>(listenerData);
-
-        if (implObjectData)
+        if (const auto* const implObjectData = dynamic_cast<SATLListenerData_Amplitude*>(listenerData))
         {
-            Listener listener = _engine->GetListener(implObjectData->nAmListenerObjectId);
-            if (listener.Valid())
+            if (Listener listener = _engine->GetListener(implObjectData->nAmListenerObjectId); listener.Valid())
             {
                 listener.SetLocation(ATLVec3ToAmVec3(newPosition.GetPositionVec()));
                 listener.SetOrientation(
@@ -768,14 +753,11 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::ResetRtpc(
         [[maybe_unused]] IATLAudioObjectData* const audioObjectData, const IATLRtpcImplData* const rtpcData)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
-        auto const implRtpcData = static_cast<const SATLRtpcImplData_Amplitude*>(rtpcData);
-
-        if (implRtpcData)
+        if (const auto* const implRtpcData = dynamic_cast<const SATLRtpcImplData_Amplitude*>(rtpcData))
         {
-            RtpcHandle rtpc = _engine->GetRtpcHandle(implRtpcData->nAmID);
-            if (rtpc)
+            if (RtpcHandle rtpc = _engine->GetRtpcHandle(implRtpcData->nAmID))
             {
                 rtpc->Reset();
                 result = EAudioRequestStatus::Success;
@@ -795,20 +777,14 @@ namespace Audio
 
     EAudioRequestStatus AmplitudeAudioSystem::RegisterInMemoryFile(SATLAudioFileEntryInfo* const audioFileEntry)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
         if (audioFileEntry)
         {
-            auto const implFileEntryData = static_cast<SATLAudioFileEntryData_Amplitude*>(audioFileEntry->pImplData);
-
-            if (implFileEntryData)
+            if (auto* const implFileEntryData = dynamic_cast<SATLAudioFileEntryData_Amplitude*>(audioFileEntry->pImplData))
             {
-                AmBankID bankId = kAmInvalidObjectId;
-
-                const bool success =
-                    _engine->LoadSoundBankFromMemoryView(audioFileEntry->pFileData, aznumeric_cast<AmSize>(audioFileEntry->nSize), bankId);
-
-                if (success)
+                if (AmBankID bankId = kAmInvalidObjectId;
+                    _engine->LoadSoundBankFromMemoryView(audioFileEntry->pFileData, aznumeric_cast<AmSize>(audioFileEntry->nSize), bankId))
                 {
                     implFileEntryData->nAmBankID = bankId;
                     result = EAudioRequestStatus::Success;
@@ -830,13 +806,11 @@ namespace Audio
 
     EAudioRequestStatus AmplitudeAudioSystem::UnregisterInMemoryFile(SATLAudioFileEntryInfo* const audioFileEntry)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
         if (audioFileEntry)
         {
-            auto* const implFileEntryData = static_cast<SATLAudioFileEntryData_Amplitude*>(audioFileEntry->pImplData);
-
-            if (implFileEntryData)
+            if (const auto* const implFileEntryData = dynamic_cast<SATLAudioFileEntryData_Amplitude*>(audioFileEntry->pImplData))
             {
                 _engine->UnloadSoundBank(implFileEntryData->nAmBankID);
 
@@ -855,28 +829,24 @@ namespace Audio
     EAudioRequestStatus AmplitudeAudioSystem::ParseAudioFileEntry(
         const AZ::rapidxml::xml_node<char>* audioFileEntryNode, SATLAudioFileEntryInfo* const fileEntryInfo)
     {
-        EAudioRequestStatus result = EAudioRequestStatus::Failure;
+        auto result = EAudioRequestStatus::Failure;
 
-        if (audioFileEntryNode && azstricmp(audioFileEntryNode->name(), XmlTags::FileTag) == 0 && fileEntryInfo)
+        if (audioFileEntryNode && azstricmp(audioFileEntryNode->name(), XmlTags::kFileTag) == 0 && fileEntryInfo)
         {
             const char* audioFileEntryName = nullptr;
-            auto fileEntryNameAttr = audioFileEntryNode->first_attribute(XmlTags::NameAttribute, 0, false);
-            if (fileEntryNameAttr)
+            if (const auto* fileEntryNameAttr = audioFileEntryNode->first_attribute(XmlTags::kNameAttribute, 0, false))
             {
                 audioFileEntryName = fileEntryNameAttr->value();
             }
 
             AmBankID audioFileEntryId = kAmInvalidObjectId;
-            auto fileEntryIdAttr = audioFileEntryNode->first_attribute(XmlTags::IdAttribute, 0, false);
-            if (fileEntryIdAttr)
+            if (const auto* fileEntryIdAttr = audioFileEntryNode->first_attribute(XmlTags::kIdAttribute, 0, false))
             {
                 audioFileEntryId = AZStd::stoull(AZStd::string(fileEntryIdAttr->value()));
             }
 
             bool isLocalized = false;
-            auto localizedAttr = audioFileEntryNode->first_attribute(XmlTags::LocalizedAttribute, 0, false);
-
-            if (localizedAttr)
+            if (const auto* localizedAttr = audioFileEntryNode->first_attribute(XmlTags::kLocalizedAttribute, 0, false))
             {
                 if (azstricmp(localizedAttr->value(), "true") == 0)
                 {
@@ -925,15 +895,13 @@ namespace Audio
     {
         SATLTriggerImplData_Amplitude* newTriggerImpl = nullptr;
 
-        if (audioTriggerNode && azstricmp(audioTriggerNode->name(), XmlTags::EventTag) == 0)
+        if (audioTriggerNode && azstricmp(audioTriggerNode->name(), XmlTags::kEventTag) == 0)
         {
-            auto eventNameAttr = audioTriggerNode->first_attribute(XmlTags::NameAttribute, 0, false);
-            if (eventNameAttr)
+            if (const auto* eventNameAttr = audioTriggerNode->first_attribute(XmlTags::kNameAttribute, 0, false))
             {
                 const char* eventName = eventNameAttr->value();
-                const EventHandle amEvent = _engine->GetEventHandle(eventName);
 
-                if (amEvent != nullptr)
+                if (const EventHandle amEvent = _engine->GetEventHandle(eventName); amEvent != nullptr)
                 {
                     newTriggerImpl = azcreate(
                         SATLTriggerImplData_Amplitude, (amEvent->GetId()), Audio::AudioImplAllocator, "ATLTriggerImplData_Amplitude");
@@ -953,15 +921,13 @@ namespace Audio
     {
         SATLRtpcImplData_Amplitude* newRtpcImpl = nullptr;
 
-        if (audioRtpcNode && azstricmp(audioRtpcNode->name(), XmlTags::RtpcTag) == 0)
+        if (audioRtpcNode && azstricmp(audioRtpcNode->name(), XmlTags::kRtpcTag) == 0)
         {
-            auto eventNameAttr = audioRtpcNode->first_attribute(XmlTags::NameAttribute, 0, false);
-            if (eventNameAttr)
+            if (const auto* eventNameAttr = audioRtpcNode->first_attribute(XmlTags::kNameAttribute, 0, false))
             {
                 const char* eventName = eventNameAttr->value();
-                const RtpcHandle amRtpc = _engine->GetRtpcHandle(eventName);
 
-                if (amRtpc != nullptr)
+                if (const RtpcHandle amRtpc = _engine->GetRtpcHandle(eventName); amRtpc != nullptr)
                 {
                     newRtpcImpl =
                         azcreate(SATLRtpcImplData_Amplitude, (amRtpc->GetId()), Audio::AudioImplAllocator, "ATLRtpcImplData_Amplitude");
@@ -981,13 +947,13 @@ namespace Audio
     {
         SATLSwitchStateImplData_Amplitude* newSwitchStateImpl = nullptr;
 
-        if (audioSwitchStateNode && azstricmp(audioSwitchStateNode->name(), XmlTags::SwitchTag) == 0)
+        if (audioSwitchStateNode && azstricmp(audioSwitchStateNode->name(), XmlTags::kSwitchTag) == 0)
         {
-            if (auto* switchIdAttr = audioSwitchStateNode->first_attribute(XmlTags::IdAttribute, 0, false); switchIdAttr)
+            if (const auto* switchIdAttr = audioSwitchStateNode->first_attribute(XmlTags::kIdAttribute, 0, false); switchIdAttr)
             {
-                if (auto* stateNode = audioSwitchStateNode->first_node(); stateNode)
+                if (const auto* stateNode = audioSwitchStateNode->first_node(); stateNode)
                 {
-                    if (auto* stateIdAttr = stateNode->first_attribute(XmlTags::IdAttribute, 0, false); stateIdAttr)
+                    if (const auto* stateIdAttr = stateNode->first_attribute(XmlTags::kIdAttribute, 0, false); stateIdAttr)
                     {
                         const char* switchId = switchIdAttr->value();
                         const char* stateId = stateIdAttr->value();
@@ -1016,14 +982,13 @@ namespace Audio
 
         SATLEnvironmentImplData_Amplitude* newEnvironmentImpl = nullptr;
 
-        if (azstricmp(audioEnvironmentNode->name(), XmlTags::BusTag) == 0)
+        if (azstricmp(audioEnvironmentNode->name(), XmlTags::kBusTag) == 0)
         {
-            if (auto* auxBusNameAttr = audioEnvironmentNode->first_attribute(XmlTags::NameAttribute, 0, false); auxBusNameAttr)
+            if (const auto* auxBusNameAttr = audioEnvironmentNode->first_attribute(XmlTags::kNameAttribute, 0, false); auxBusNameAttr)
             {
                 const char* auxBusName = auxBusNameAttr->value();
-                const Bus amBus = _engine->FindBus(auxBusName);
 
-                if (amBus.Valid())
+                if (const Bus amBus = _engine->FindBus(auxBusName); amBus.Valid())
                 {
                     newEnvironmentImpl = azcreate(
                         SATLEnvironmentImplData_Amplitude, (eAAET_BUS, amBus.GetId()), Audio::AudioImplAllocator,
@@ -1031,13 +996,13 @@ namespace Audio
                 }
             }
         }
-        else if (azstricmp(audioEnvironmentNode->name(), XmlTags::SwitchTag) == 0)
+        else if (azstricmp(audioEnvironmentNode->name(), XmlTags::kSwitchTag) == 0)
         {
-            if (auto* switchIdAttr = audioEnvironmentNode->first_attribute(XmlTags::IdAttribute, 0, false); switchIdAttr)
+            if (const auto* switchIdAttr = audioEnvironmentNode->first_attribute(XmlTags::kIdAttribute, 0, false); switchIdAttr)
             {
-                if (auto* stateNode = audioEnvironmentNode->first_node(); stateNode)
+                if (const auto* stateNode = audioEnvironmentNode->first_node(); stateNode)
                 {
-                    if (auto* stateIdAttr = stateNode->first_attribute(XmlTags::IdAttribute, 0, false); stateIdAttr)
+                    if (const auto* stateIdAttr = stateNode->first_attribute(XmlTags::kIdAttribute, 0, false); stateIdAttr)
                     {
                         const char* switchId = switchIdAttr->value();
                         const char* stateId = stateIdAttr->value();
@@ -1050,22 +1015,20 @@ namespace Audio
                 }
             }
         }
-        else if (azstricmp(audioEnvironmentNode->name(), XmlTags::EnvironmentTag) == 0)
+        else if (azstricmp(audioEnvironmentNode->name(), XmlTags::kEnvironmentTag) == 0)
         {
-            auto* envIdAttr = audioEnvironmentNode->first_attribute(XmlTags::IdAttribute, 0, false);
-            auto* valueAttr = audioEnvironmentNode->first_attribute(XmlTags::ValueAttribute, 0, false);
+            const auto* envIdAttr = audioEnvironmentNode->first_attribute(XmlTags::kIdAttribute, 0, false);
+            const auto* valueAttr = audioEnvironmentNode->first_attribute(XmlTags::kValueAttribute, 0, false);
 
             if (envIdAttr && valueAttr)
             {
                 const char* envId = envIdAttr->value();
-                Environment env = _engine->AddEnvironment(AZStd::stoull(AZStd::string(envId)));
 
-                if (env.Valid())
+                if (Environment env = _engine->AddEnvironment(AZStd::stoull(AZStd::string(envId))); env.Valid())
                 {
                     const char* effectId = valueAttr->value();
-                    const EffectHandle effect = _engine->GetEffectHandle(AZStd::stoull(AZStd::string(effectId)));
 
-                    if (effect != nullptr)
+                    if (const EffectHandle effect = _engine->GetEffectHandle(AZStd::stoull(AZStd::string(effectId))); effect != nullptr)
                     {
                         env.SetEffect(effect);
 
@@ -1087,7 +1050,7 @@ namespace Audio
 
     SATLAudioObjectData_Amplitude* AmplitudeAudioSystem::NewGlobalAudioObjectData(const TAudioObjectID objectId)
     {
-        auto newObjectData = azcreate(
+        auto* newObjectData = azcreate(
             SATLAudioObjectData_Amplitude, (static_cast<AmObjectID>(objectId), false), Audio::AudioImplAllocator,
             "ATLAudioObjectData_Amplitude-Global");
 
@@ -1096,7 +1059,7 @@ namespace Audio
 
     SATLAudioObjectData_Amplitude* AmplitudeAudioSystem::NewAudioObjectData(const TAudioObjectID objectId)
     {
-        auto newObjectData = azcreate(
+        auto* newObjectData = azcreate(
             SATLAudioObjectData_Amplitude, (static_cast<AmObjectID>(objectId), true), Audio::AudioImplAllocator,
             "ATLAudioObjectData_Amplitude");
 
@@ -1108,19 +1071,19 @@ namespace Audio
         azdestroy(oldObjectData, Audio::AudioImplAllocator, SATLAudioObjectData_Amplitude);
     }
 
-    SATLListenerData_Amplitude* AmplitudeAudioSystem::NewDefaultAudioListenerObjectData(const TATLIDType objectId)
+    SATLListenerData_Amplitude* AmplitudeAudioSystem::NewDefaultAudioListenerObjectData(const TATLIDType listenerId)
     {
-        auto newObjectData = azcreate(
-            SATLListenerData_Amplitude, (static_cast<AmObjectID>(objectId)), Audio::AudioImplAllocator,
+        auto* const newObjectData = azcreate(
+            SATLListenerData_Amplitude, (static_cast<AmObjectID>(listenerId)), Audio::AudioImplAllocator,
             "ATLListenerData_Amplitude-Default");
 
         if (newObjectData)
         {
-            Listener listener = _engine->AddListener(newObjectData->nAmListenerObjectId);
+            const Listener listener = _engine->AddListener(newObjectData->nAmListenerObjectId);
             if (listener.Valid())
             {
                 _engine->SetDefaultListener(&listener);
-                m_defaultListenerGameObjectID = newObjectData->nAmListenerObjectId;
+                _defaultListenerGameObjectId = newObjectData->nAmListenerObjectId;
             }
             else
             {
@@ -1133,13 +1096,12 @@ namespace Audio
 
     SATLListenerData_Amplitude* AmplitudeAudioSystem::NewAudioListenerObjectData(const TATLIDType listenerId)
     {
-        auto newObjectData = azcreate(
+        auto* const newObjectData = azcreate(
             SATLListenerData_Amplitude, (static_cast<AmListenerID>(listenerId)), Audio::AudioImplAllocator, "ATLListenerData_Amplitude");
 
         if (newObjectData)
         {
-            Listener listener = _engine->AddListener(newObjectData->nAmListenerObjectId);
-            if (!listener.Valid())
+            if (const Listener listener = _engine->AddListener(newObjectData->nAmListenerObjectId); !listener.Valid())
             {
                 AZLOG_WARN("Amplitude failed in registering a Listener.");
             }
@@ -1150,13 +1112,12 @@ namespace Audio
 
     void AmplitudeAudioSystem::DeleteAudioListenerObjectData(IATLListenerData* const oldListenerData)
     {
-        const auto* listenerData = static_cast<SATLListenerData_Amplitude*>(oldListenerData);
-        if (listenerData)
+        if (const auto* const listenerData = dynamic_cast<SATLListenerData_Amplitude*>(oldListenerData))
         {
             _engine->RemoveListener(listenerData->nAmListenerObjectId);
-            if (listenerData->nAmListenerObjectId == m_defaultListenerGameObjectID)
+            if (listenerData->nAmListenerObjectId == _defaultListenerGameObjectId)
             {
-                m_defaultListenerGameObjectID = kAmInvalidObjectId;
+                _defaultListenerGameObjectId = kAmInvalidObjectId;
             }
         }
 
@@ -1175,9 +1136,7 @@ namespace Audio
 
     void AmplitudeAudioSystem::ResetAudioEventData(IATLEventData* const eventData)
     {
-        auto* const implEventData = static_cast<SATLEventData_Amplitude*>(eventData);
-
-        if (implEventData)
+        if (auto* const implEventData = dynamic_cast<SATLEventData_Amplitude*>(eventData))
         {
             implEventData->audioEventState = eAES_NONE;
             implEventData->eventCanceler = EventCanceler(nullptr);
@@ -1199,7 +1158,7 @@ namespace Audio
     const char* const AmplitudeAudioSystem::GetImplementationNameString() const
     {
 #if !defined(AMPLITUDE_RELEASE)
-        return m_fullImplString.c_str();
+        return _fullImplString.c_str();
 #else
         return nullptr;
 #endif // !AMPLITUDE_RELEASE
@@ -1221,7 +1180,7 @@ namespace Audio
     {
 #if !defined(AMPLITUDE_RELEASE)
         // Update memory category info...
-        for (auto& memInfo : m_debugMemoryInfo)
+        for (auto& memInfo : _debugMemoryInfo)
         {
             if (memInfo.m_poolId < 0)
             {
@@ -1239,7 +1198,7 @@ namespace Audio
         // TODO: Global stats
 
         // return the memory infos...
-        return m_debugMemoryInfo;
+        return _debugMemoryInfo;
 #else
         return AZStd::vector<AudioImplMemoryPoolInfo>();
 #endif // !AMPLITUDE_RELEASE
@@ -1264,15 +1223,15 @@ namespace Audio
     {
         // Default...
         // "Sounds/amplitude_assets/soundbanks/"
-        AZStd::string bankPath = DefaultBanksPath;
+        AZStd::string bankPath = kDefaultBanksPath;
         AZ::StringFunc::AssetDatabasePath::Join(bankPath.c_str(), "", bankPath);
 
         // "Sounds/amplitude_project/audio_config.json"
-        AZStd::string configFile = AZStd::string(ProjectRootPath) + EngineConfigFile;
+        const AZStd::string configFile = AZStd::string(kProjectRootPath) + kEngineConfigFile;
 
         if (AZ::IO::FileIOBase::GetInstance() && AZ::IO::FileIOBase::GetInstance()->Exists(configFile.c_str()))
         {
-            // TODO: Support multiplatform soundbanks
+            // TODO: Support multi-platform soundbanks
             // Audio::Wwise::ConfigurationSettings configSettings;
             // if (configSettings.Load(configFile))
             // {
@@ -1310,7 +1269,5 @@ namespace Audio
 
         m_soundbankFolder = bankPath;
         m_localizedSoundbankFolder = bankPath;
-
-        // Audio::Wwise::SetBanksRootPath(m_soundbankFolder);
     }
 } // namespace Audio

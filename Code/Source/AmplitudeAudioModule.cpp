@@ -25,4 +25,4 @@ namespace SparkyStudios::Audio::Amplitude
     };
 } // namespace SparkyStudios::Audio::Amplitude
 
-AZ_DECLARE_MODULE_CLASS(Gem_SSAmplitudeAudio, SparkyStudios::Audio::Amplitude::AmplitudeAudioModule)
+AZ_DECLARE_MODULE_CLASS(Gem_Amplitude, SparkyStudios::Audio::Amplitude::AmplitudeAudioModule)

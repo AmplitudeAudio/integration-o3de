@@ -32,11 +32,11 @@ namespace SparkyStudios::Audio::Amplitude
     {
         m_audioSystemImpl = audioSystemImpl;
         const AZ::IO::FixedMaxPath projectFullPath{ m_audioSystemImpl->GetDataPath() };
-        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / EventsFolder }.Native(), eAMCT_AMPLITUDE_EVENT);
-        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / RtpcFolder }.Native(), eAMCT_AMPLITUDE_RTPC);
-        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / SwitchesFolder }.Native(), eAMCT_AMPLITUDE_SWITCH);
-        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / EffectsFolder }.Native(), eAMCT_AMPLITUDE_EFFECT);
-        LoadSoundBanks(projectFullPath.Native(), SoundBanksFolder, false);
+        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / kEventsFolder }.Native(), eAMCT_AMPLITUDE_EVENT);
+        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / kRtpcFolder }.Native(), eAMCT_AMPLITUDE_RTPC);
+        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / kSwitchesFolder }.Native(), eAMCT_AMPLITUDE_SWITCH);
+        LoadControlsInFolder(AZ::IO::FixedMaxPath{ projectFullPath / kEffectsFolder }.Native(), eAMCT_AMPLITUDE_EFFECT);
+        LoadSoundBanks(projectFullPath.Native(), kSoundBanksFolder, false);
         LoadBuses(projectFullPath.Native());
     }
 
@@ -94,7 +94,7 @@ namespace SparkyStudios::Audio::Amplitude
     void AmplitudeAudioControlLoader::LoadBuses(const AZStd::string_view rootFolder)
     {
         AZ::IO::FixedMaxPath filePath(rootFolder);
-        filePath /= Audio::Amplitude::BusesConfigFile;
+        filePath /= Audio::Amplitude::kBusesConfigFile;
         AZ_Assert(AZ::IO::FileIOBase::GetInstance()->Exists(filePath.c_str()), "File '%s' doesn't exist!", filePath.c_str());
         AZ::IO::PathView fileName = filePath.Filename();
 
@@ -202,7 +202,7 @@ namespace SparkyStudios::Audio::Amplitude
             AZStd::string controlName(json["name"].GetString());
             if (type == eAMCT_AMPLITUDE_SOUND_BANK)
             {
-                controlName += SoundBankFileExtension;
+                controlName += kSoundBankFileExtension;
             }
 
             auto* control = static_cast<AmplitudeAudioSystemControl*>(m_audioSystemImpl->GetControlByName(controlName));

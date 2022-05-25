@@ -23,27 +23,27 @@ namespace SparkyStudios::Audio::Amplitude
     // Amplitude Xml Element Names
     namespace XmlTags
     {
-        static constexpr const char* EventTag = "AmplitudeEvent";
-        static constexpr const char* RtpcTag = "AmplitudeRtpc";
-        static constexpr const char* SwitchTag = "AmplitudeSwitch";
-        static constexpr const char* SwitchStateTag = "AmplitudeSwitchState";
-        static constexpr const char* StateTag = "AmplitudeState";
-        static constexpr const char* FileTag = "AmplitudeFile";
-        static constexpr const char* BusTag = "AmplitudeBus";
-        static constexpr const char* EnvironmentTag = "AmplitudeEnvironment";
+        static constexpr char kEventTag[] = "AmplitudeEvent";
+        static constexpr char kRtpcTag[] = "AmplitudeRtpc";
+        static constexpr char kSwitchTag[] = "AmplitudeSwitch";
+        static constexpr char kSwitchStateTag[] = "AmplitudeSwitchState";
+        static constexpr char kStateTag[] = "AmplitudeState";
+        static constexpr char kFileTag[] = "AmplitudeFile";
+        static constexpr char kBusTag[] = "AmplitudeBus";
+        static constexpr char kEnvironmentTag[] = "AmplitudeEnvironment";
 
-        static constexpr const char* LocalizedAttribute = "amplitude_localized";
-        static constexpr const char* IdAttribute = "amplitude_id";
-        static constexpr const char* NameAttribute = "amplitude_name";
-        static constexpr const char* ValueAttribute = "amplitude_value";
-        static constexpr const char* MultiplierAttribute = "atl_multiplier";
-        static constexpr const char* ShiftAttribute = "atl_shift";
+        static constexpr char kLocalizedAttribute[] = "amplitude_localized";
+        static constexpr char kIdAttribute[] = "amplitude_id";
+        static constexpr char kNameAttribute[] = "amplitude_name";
+        static constexpr char kValueAttribute[] = "amplitude_value";
+        static constexpr char kMultiplierAttribute[] = "atl_multiplier";
+        static constexpr char kShiftAttribute[] = "atl_shift";
     } // namespace XmlTags
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    inline static const char* MemoryManagerPools[]{ "Engine", "Amplimix", "SoundData", "Filtering", "Codec" };
+    AZ_INLINE static const char* gMemoryManagerPools[]{ "Engine", "Amplimix", "SoundData", "Filtering", "Codec" };
 
-    inline hmm_vec3 ATLVec3ToAmVec3(AZ::Vector3 vec)
+    AZ_INLINE hmm_vec3 ATLVec3ToAmVec3(const AZ::Vector3& vec)
     {
         return AM_Vec3(vec.GetX(), vec.GetY(), vec.GetZ());
     }

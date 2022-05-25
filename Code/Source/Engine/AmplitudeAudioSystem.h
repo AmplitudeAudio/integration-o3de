@@ -23,7 +23,7 @@
 
 namespace Audio
 {
-    class AmplitudeAudioSystem : public AudioSystemImplementation
+    class AmplitudeAudioSystem final : public AudioSystemImplementation
     {
     public:
         AZ_RTTI(AmplitudeAudioSystem, "{4A44DC87-7082-4220-809C-F5C829552F4F}", AudioSystemImplementation);
@@ -41,7 +41,7 @@ namespace Audio
         // ~AudioSystemImplementationNotificationBus
 
         // AudioSystemImplementationRequestBus
-        void Update(float updateIntervalMS) override;
+        void Update(float updateIntervalMs) override;
 
         EAudioRequestStatus Initialize() override;
         EAudioRequestStatus ShutDown() override;
@@ -64,7 +64,7 @@ namespace Audio
             IATLAudioObjectData* audioObjectData,
             const IATLTriggerImplData* triggerData,
             IATLEventData* eventData,
-            const SATLSourceData* pSourceData) override;
+            const SATLSourceData* sourceData) override;
         EAudioRequestStatus StopEvent(IATLAudioObjectData* audioObjectData, const IATLEventData* eventData) override;
         EAudioRequestStatus StopAllEvents(IATLAudioObjectData* audioObjectData) override;
         EAudioRequestStatus SetPosition(IATLAudioObjectData* audioObjectData, const SATLWorldPosition& worldPosition) override;
@@ -102,8 +102,8 @@ namespace Audio
         SATLAudioObjectData_Amplitude* NewAudioObjectData(TAudioObjectID objectId) override;
         void DeleteAudioObjectData(IATLAudioObjectData* oldObjectData) override;
 
-        SATLListenerData_Amplitude* NewDefaultAudioListenerObjectData(TATLIDType objectId) override;
-        SATLListenerData_Amplitude* NewAudioListenerObjectData(TATLIDType objectId) override;
+        SATLListenerData_Amplitude* NewDefaultAudioListenerObjectData(TATLIDType listenerId) override;
+        SATLListenerData_Amplitude* NewAudioListenerObjectData(TATLIDType listenerId) override;
         void DeleteAudioListenerObjectData(IATLListenerData* oldListenerData) override;
 
         SATLEventData_Amplitude* NewAudioEventData(TAudioEventID eventId) override;
@@ -132,10 +132,10 @@ namespace Audio
         AZStd::string m_assetsPlatform;
 
     private:
-        static const char* const AmplitudeImplSubPath;
-        static const char* const AmplitudeGlobalAudioObjectName;
-        static const float ObstructionOcclusionMin;
-        static const float ObstructionOcclusionMax;
+        static constexpr char AmplitudeImplSubPath[] = "Amplitude";
+        static constexpr char AmplitudeGlobalAudioObjectName[] = "AM-GlobalAudioObject";
+        static constexpr float ObstructionOcclusionMin = 0.0f;
+        static constexpr float ObstructionOcclusionMax = 1.0f;
 
         struct SEnvPairCompare
         {
@@ -152,22 +152,22 @@ namespace Audio
 
         // EAudioRequestStatus PostEnvironmentAmounts(IATLAudioObjectData* const audioObjectData);
 
-        Entity m_globalGameObject;
-        AmEntityID m_globalGameObjectID;
+        Entity _globalGameObject;
+        AmEntityID _globalGameObjectId;
 
-        AmEntityID m_defaultListenerGameObjectID;
+        AmEntityID _defaultListenerGameObjectId;
 
-        AmBankID m_initBankID;
+        AmBankID _initBankId;
 
-        SparkyStudios::Audio::Amplitude::FileLoader _fileLoader;
+        FileLoader _fileLoader;
 
-        SparkyStudios::Audio::Amplitude::Engine* _engine;
+        Engine* _engine;
 
 #if !defined(AMPLITUDE_RELEASE)
-        bool m_isCommSystemInitialized;
-        AZStd::vector<AudioImplMemoryPoolInfo> m_debugMemoryInfo;
-        AZStd::string m_fullImplString;
-        AZStd::string m_speakerConfigString;
+        bool _isCommSystemInitialized;
+        AZStd::vector<AudioImplMemoryPoolInfo> _debugMemoryInfo;
+        AZStd::string _fullImplString;
+        AZStd::string _speakerConfigString;
 #endif // !AMPLITUDE_RELEASE
     };
 } // namespace Audio

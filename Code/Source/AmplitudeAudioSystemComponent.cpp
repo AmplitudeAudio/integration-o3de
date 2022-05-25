@@ -28,12 +28,11 @@
 
 #include <Engine/AmplitudeAudioSystem.h>
 
-
 namespace SparkyStudios::Audio::Amplitude
 {
     void AmplitudeAudioSystemComponent::Reflect(AZ::ReflectContext* context)
     {
-        if (AZ::SerializeContext* serialize = azrtti_cast<AZ::SerializeContext*>(context))
+        if (auto* const serialize = azrtti_cast<AZ::SerializeContext*>(context))
         {
             serialize->Class<AmplitudeAudioSystemComponent, AZ::Component>()->Version(0);
 
@@ -118,7 +117,7 @@ namespace SparkyStudios::Audio::Amplitude
 
         AZ::SettingsRegistryInterface::FixedValueString assetPlatform =
             AzFramework::OSPlatformToDefaultAssetPlatform(AZ_TRAIT_OS_PLATFORM_CODENAME);
-        if (auto settingsRegistry = AZ::SettingsRegistry::Get(); settingsRegistry != nullptr)
+        if (auto* const settingsRegistry = AZ::SettingsRegistry::Get(); settingsRegistry != nullptr)
         {
             AZ::SettingsRegistryMergeUtils::PlatformGet(
                 *settingsRegistry, assetPlatform, AZ::SettingsRegistryMergeUtils::BootstrapSettingsRootKey, "assets");

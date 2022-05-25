@@ -19,32 +19,32 @@
 
 namespace SparkyStudios::Audio::Amplitude
 {
-    static constexpr const char ProjectRootPath[] = "sounds/" AMPLITUDE_PROJECT_DIR_NAME "/";
-    static constexpr const char AssetsRootPath[] = "sounds/" AMPLITUDE_ASSETS_DIR_NAME "/";
-    static constexpr const char DefaultBanksPath[] = "sounds/" AMPLITUDE_ASSETS_DIR_NAME "/soundbanks/";
+    static constexpr char kProjectRootPath[] = "sounds/" AMPLITUDE_PROJECT_DIR_NAME "/";
+    static constexpr char kAssetsRootPath[] = "sounds/" AMPLITUDE_ASSETS_DIR_NAME "/";
+    static constexpr char kDefaultBanksPath[] = "sounds/" AMPLITUDE_ASSETS_DIR_NAME "/soundbanks/";
 
-    static constexpr const char EngineConfigFile[] = "audio_config.json";
-    static constexpr const char BusesConfigFile[] = "buses.json";
-    static constexpr const char InitBankFile[] = "init.ambank";
+    static constexpr char kEngineConfigFile[] = "audio_config.json";
+    static constexpr char kBusesConfigFile[] = "buses.json";
+    static constexpr char kInitBankFile[] = "init.ambank";
 
-    static constexpr const char ProjectFileExtension[] = ".json";
-    static constexpr const char SoundBankFileExtension[] = ".ambank";
-    static constexpr const char AssetBusFileExtension[] = ".ambus";
-    static constexpr const char AssetCollectionFileExtension[] = ".amcollection";
-    static constexpr const char AssetSoundFileExtension[] = ".amsound";
-    static constexpr const char AssetEventFileExtension[] = ".amevent";
-    static constexpr const char AssetEnvironmentFileExtension[] = ".amenv";
-    static constexpr const char AssetAttenuationFileExtension[] = ".amattenuation";
-    static constexpr const char AssetSwitchFileExtension[] = ".amswitch";
-    static constexpr const char AssetSwitchContainerFileExtension[] = ".amswitchcontainer";
-    static constexpr const char AssetRtpcFileExtension[] = ".amrtpc";
-    static constexpr const char AssetMediaFileExtension[] = ".ams";
+    static constexpr char kProjectFileExtension[] = ".json";
+    static constexpr char kSoundBankFileExtension[] = ".ambank";
+    static constexpr char kAssetBusFileExtension[] = ".ambus";
+    static constexpr char kAssetCollectionFileExtension[] = ".amcollection";
+    static constexpr char kAssetSoundFileExtension[] = ".amsound";
+    static constexpr char kAssetEventFileExtension[] = ".amevent";
+    static constexpr char kAssetEnvironmentFileExtension[] = ".amenv";
+    static constexpr char kAssetAttenuationFileExtension[] = ".amattenuation";
+    static constexpr char kAssetSwitchFileExtension[] = ".amswitch";
+    static constexpr char kAssetSwitchContainerFileExtension[] = ".amswitchcontainer";
+    static constexpr char kAssetRtpcFileExtension[] = ".amrtpc";
+    static constexpr char kAssetMediaFileExtension[] = ".ams";
 
     // Project Folders
-    static constexpr const char EventsFolder[] = "events";
-    static constexpr const char RtpcFolder[] = "rtpc";
-    static constexpr const char SoundBanksFolder[] = "soundbanks";
-    static constexpr const char SoundsFolder[] = "sounds";
-    static constexpr const char SwitchesFolder[] = "switches";
-    static constexpr const char EffectsFolder[] = "effects";
+    static constexpr char kEventsFolder[] = "events";
+    static constexpr char kRtpcFolder[] = "rtpc";
+    static constexpr char kSoundBanksFolder[] = "soundbanks";
+    static constexpr char kSoundsFolder[] = "sounds";
+    static constexpr char kSwitchesFolder[] = "switches";
+    static constexpr char kEffectsFolder[] = "effects";
 } // namespace SparkyStudios::Audio::Amplitude

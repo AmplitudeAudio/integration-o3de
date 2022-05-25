@@ -29,7 +29,7 @@ namespace SparkyStudios::Audio::Amplitude
         AZ_RTTI(AmplitudeAudioControlBuilderWorker, "{8D972AB9-0119-4F2B-9C00-C53D1227E373}");
 
         AmplitudeAudioControlBuilderWorker();
-        ~AmplitudeAudioControlBuilderWorker() = default;
+        ~AmplitudeAudioControlBuilderWorker() override = default;
 
         //! Asset Builder Callback Functions
         void CreateJobs(const AssetBuilderSDK::CreateJobsRequest& request, AssetBuilderSDK::CreateJobsResponse& response);

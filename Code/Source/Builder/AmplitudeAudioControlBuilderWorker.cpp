@@ -120,16 +120,16 @@ namespace SparkyStudios::Audio::Amplitude
             {
                 // For each audio trigger, push the name of the Amplitude event (if assigned) into the list.
                 // It's okay for an ATLTrigger node to not have a Amplitude event associated with it.
-                if (const auto eventNode = triggerNode->first_node(XmlTags::EventTag))
+                if (const auto eventNode = triggerNode->first_node(XmlTags::kEventTag))
                 {
-                    if (const auto eventNameAttr = eventNode->first_attribute(XmlTags::NameAttribute))
+                    if (const auto eventNameAttr = eventNode->first_attribute(XmlTags::kNameAttribute))
                     {
                         eventNames.push_back(eventNameAttr->value());
                     }
                     else
                     {
                         return AZ::Failure(
-                            AZStd::string::format(MalformedNodeMissingAttributeMessage, XmlTags::EventTag, XmlTags::NameAttribute));
+                            AZStd::string::format(MalformedNodeMissingAttributeMessage, XmlTags::kEventTag, XmlTags::kNameAttribute));
                     }
                 }
 
@@ -156,11 +156,11 @@ namespace SparkyStudios::Audio::Amplitude
             while (preloadRequestNode)
             {
                 // Attempt to find the child node in the xml...
-                if (auto amFileNode = preloadRequestNode->first_node(XmlTags::FileTag))
+                if (auto amFileNode = preloadRequestNode->first_node(XmlTags::kFileTag))
                 {
                     while (amFileNode)
                     {
-                        const auto bankNameAttr = amFileNode->first_attribute(XmlTags::NameAttribute);
+                        const auto bankNameAttr = amFileNode->first_attribute(XmlTags::kNameAttribute);
                         if (bankNameAttr)
                         {
                             banksReferenced.emplace_back(bankNameAttr->value());
@@ -168,15 +168,15 @@ namespace SparkyStudios::Audio::Amplitude
                         else
                         {
                             return AZ::Failure(
-                                AZStd::string::format(MalformedNodeMissingAttributeMessage, XmlTags::FileTag, XmlTags::NameAttribute));
+                                AZStd::string::format(MalformedNodeMissingAttributeMessage, XmlTags::kFileTag, XmlTags::kNameAttribute));
                         }
 
-                        amFileNode = amFileNode->next_sibling(XmlTags::FileTag);
+                        amFileNode = amFileNode->next_sibling(XmlTags::kFileTag);
                     }
                 }
                 else
                 {
-                    return AZ::Failure(AZStd::string::format(NodeDoesNotExistMessage, XmlTags::FileTag, "bank file"));
+                    return AZ::Failure(AZStd::string::format(NodeDoesNotExistMessage, XmlTags::kFileTag, "bank file"));
                 }
 
                 preloadRequestNode = preloadRequestNode->next_sibling(::Audio::ATLXmlTags::ATLPreloadRequestTag);
@@ -207,7 +207,7 @@ namespace SparkyStudios::Audio::Amplitude
             for (rapidjson::SizeType eventIndex = 0; eventIndex < eventsArray.Size(); ++eventIndex)
             {
                 AZStd::string eventName(eventsArray[eventIndex].GetString());
-                eventNames.emplace(eventName.substr(0, eventName.length() - strlen(AssetEventFileExtension)));
+                eventNames.emplace(eventName.substr(0, eventName.length() - strlen(kAssetEventFileExtension)));
             }
 
             return AZ::Success();
@@ -252,7 +252,7 @@ namespace SparkyStudios::Audio::Amplitude
     } // namespace Internal
 
     AmplitudeAudioControlBuilderWorker::AmplitudeAudioControlBuilderWorker()
-        : m_globalScopeControlsPath("libs/gameaudio/" AMPLITUDE_ASSETS_DIR_NAME "/")
+        : m_globalScopeControlsPath("libs/AmplitudeAudio/")
         , m_isShuttingDown(false)
     {
         AZ::StringFunc::Path::Normalize(m_globalScopeControlsPath);
@@ -330,7 +330,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        AZ::IO::SizeType length = fileStream.GetLength();
+        const AZ::IO::SizeType length = fileStream.GetLength();
         if (length == 0)
         {
             return false;
@@ -348,7 +348,7 @@ namespace SparkyStudios::Audio::Amplitude
             return false;
         }
 
-        AZ::rapidxml::xml_node<char>* xmlRootNode = xmlDoc.first_node();
+        const AZ::rapidxml::xml_node<char>* xmlRootNode = xmlDoc.first_node();
         if (!xmlRootNode)
         {
             return false;
@@ -392,18 +392,18 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        if (banksReferenced.size() == 0)
+        if (banksReferenced.empty())
         {
             AZ_TracePrintf(AssetBuilderSDK::WarningWindow, "No referenced banks.\n");
             // If there are no banks referenced, then there are no dependencies to register, so return.
             return;
         }
 
-        AZStd::string soundBankPath(DefaultBanksPath);
+        AZStd::string soundBankPath(kDefaultBanksPath);
         for (const AZStd::string& relativeBankPath : banksReferenced)
         {
             pathDependencies.emplace(
-                soundBankPath + relativeBankPath + SoundBankFileExtension, AssetBuilderSDK::ProductPathDependencyType::ProductFile);
+                soundBankPath + relativeBankPath + kSoundBankFileExtension, AssetBuilderSDK::ProductPathDependencyType::ProductFile);
         }
 
         // For each bank figure out what events are included in the bank, then run through every event referenced in the file and
@@ -426,9 +426,9 @@ namespace SparkyStudios::Audio::Amplitude
             return;
         }
 
-        std::string fp = std::string(fullPath.c_str());
+        AZStd::string fp = AZStd::string(fullPath.c_str());
         AZStd::string projectSourcePath =
-            fp.replace(fp.find(AMPLITUDE_ASSETS_DIR_NAME), strlen(AMPLITUDE_ASSETS_DIR_NAME), AMPLITUDE_PROJECT_DIR_NAME).c_str();
+            fp.replace(fp.find(AMPLITUDE_ASSETS_DIR_NAME), strlen(AMPLITUDE_ASSETS_DIR_NAME), AMPLITUDE_PROJECT_DIR_NAME);
         AZ_TracePrintf(AssetBuilderSDK::InfoWindow, projectSourcePath.c_str());
         AZ::u64 firstSubDirectoryIndex = AZ::StringFunc::Find(projectSourcePath, m_globalScopeControlsPath);
         AZ::StringFunc::LKeep(projectSourcePath, firstSubDirectoryIndex);
@@ -441,7 +441,7 @@ namespace SparkyStudios::Audio::Amplitude
             // Create the full path to the source file from the bank file.
             AZStd::string bankMetadataPath;
             AZ::StringFunc::Path::Join(projectSourcePath.c_str(), relativeBankPath.c_str(), bankMetadataPath);
-            AZ::StringFunc::Path::ReplaceExtension(bankMetadataPath, ProjectFileExtension);
+            AZ::StringFunc::Path::ReplaceExtension(bankMetadataPath, kProjectFileExtension);
 
             AZ::Outcome<void, AZStd::string> getReferencedEventsResult =
                 Internal::GetEventsFromBank(bankMetadataPath, amEventsInReferencedBanks);

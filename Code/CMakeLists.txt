@@ -20,14 +20,10 @@
 #            <restricted_folder>/<platform_name>/Gems/SSAmplitudeAudio/Code
 o3de_pal_dir(pal_dir ${CMAKE_CURRENT_LIST_DIR}/Platform/${PAL_PLATFORM_NAME} ${gem_restricted_path} "${gem_path}" "${gem_name}")
 
-# Now that we have the platform abstraction layer (PAL) folder for this folder, thats where we will find the
-# traits for this platform. Traits for a platform are defines for things like whether or not something in this gem
+# Now that we have the platform abstraction layer (PAL) folder for this folder, that's where we will find the
+# traits for this platform. Traits for a platform are defined for things like whether or not something in this gem
 # is supported by this platform.
 include(${pal_dir}/PAL_${PAL_PLATFORM_NAME_LOWERCASE}.cmake)
-
-set(AMPLITUDEAUDIOSDK_COMPILEDEFINITIONS
-    $<IF:$<CONFIG:Release>,AMPLITUDE_RELEASE,AMPLITUDE_DEBUG>
-)
 
 if(NOT PAL_TRAIT_SSAMPLITUDEAUDIO_SUPPORTED)
     include(ssamplitudeaudio_unsuported.cmake)
@@ -37,7 +33,7 @@ endif()
 if (PAL_TRAIT_BUILD_SERVER_SUPPORTED OR PAL_TRAIT_SSAMPLITUDEAUDIO_USE_STUB)
     # Stub gem for server and unsupported platforms. Audio Engine Wwise is client only
     ly_add_target(
-        NAME SSAmplitudeAudio.Stub ${PAL_TRAIT_MONOLITHIC_DRIVEN_MODULE_TYPE}
+        NAME Amplitude.Stub ${PAL_TRAIT_MONOLITHIC_DRIVEN_MODULE_TYPE}
         NAMESPACE SparkyStudios::Audio
         OUTPUT_NAME SparkyStudios.Audio.Amplitude.Stub
         FILES_CMAKE
@@ -48,18 +44,22 @@ if (PAL_TRAIT_BUILD_SERVER_SUPPORTED OR PAL_TRAIT_SSAMPLITUDEAUDIO_USE_STUB)
     )
 endif()
 
-if (PAL_TRAIT_AMPLITUDE_AUDIO_USE_STUB)
-    # setup aliases so stubs will be used if something references SSAmplitudeAudio(.Editor)
-    add_library(SparkyStudios::Audio::SSAmplitudeAudio ALIAS SSAmplitudeAudio.Stub)
-    add_library(SparkyStudios::Audio::SSAmplitudeAudio.Editor ALIAS SSAmplitudeAudio.Stub)
+if (PAL_TRAIT_SSAMPLITUDEAUDIO_USE_STUB)
+    # setup aliases so stubs will be used if something references Amplitude(.Editor)
+    add_library(SparkyStudios::Audio::Amplitude ALIAS Amplitude.Stub)
+    add_library(SparkyStudios::Audio::Amplitude.Editor ALIAS Amplitude.Stub)
     return()
 endif()
 
-# Add the SSAmplitudeAudio.Static target
+set(AMPLITUDEAUDIOSDK_COMPILEDEFINITIONS
+    $<IF:$<CONFIG:Release>,AMPLITUDE_RELEASE,AMPLITUDE_DEBUG>
+)
+
+# Add the Amplitude.Static target
 # Note: We include the common files and the platform specific files which are set in ssamplitudeaudio_common_files.cmake
 # and in ${pal_dir}/ssamplitudeaudio_${PAL_PLATFORM_NAME_LOWERCASE}_files.cmake
 ly_add_target(
-    NAME SSAmplitudeAudio.Static STATIC
+    NAME Amplitude.Static STATIC
     NAMESPACE SparkyStudios::Audio
     OUTPUT_NAME SparkyStudios.Audio.Amplitude.Static
     FILES_CMAKE
@@ -82,9 +82,9 @@ ly_add_target(
             AZ::AzCore
 )
 
-# Here add SSAmplitudeAudio target, it depends on the SSAmplitudeAudio.Static
+# Here add Amplitude target, it depends on the Amplitude.Static
 ly_add_target(
-    NAME SSAmplitudeAudio ${PAL_TRAIT_MONOLITHIC_DRIVEN_MODULE_TYPE}
+    NAME Amplitude ${PAL_TRAIT_MONOLITHIC_DRIVEN_MODULE_TYPE}
     NAMESPACE SparkyStudios::Audio
     OUTPUT_NAME SparkyStudios.Audio.Amplitude
     FILES_CMAKE
@@ -100,19 +100,19 @@ ly_add_target(
             ${AMPLITUDEAUDIOSDK_COMPILEDEFINITIONS}
     BUILD_DEPENDENCIES
         PRIVATE
-            SparkyStudios::Audio::SSAmplitudeAudio.Static
+            SparkyStudios::Audio::Amplitude.Static
 )
 
-# By default, we will specify that the above target SSAmplitudeAudio would be used by
+# By default, we will specify that the above target Amplitude would be used by
 # Client and Server type targets when this gem is enabled.  If you don't want it
-# active in Clients or Servers by default, delete one of both of the following lines:
-ly_create_alias(NAME SSAmplitudeAudio.Clients NAMESPACE Gem TARGETS SparkyStudios::Audio::SSAmplitudeAudio)
+# active in Clients or Servers by default, delete one or both of the following lines:
+ly_create_alias(NAME SSAmplitudeAudio.Clients NAMESPACE Gem TARGETS SparkyStudios::Audio::Amplitude)
 
-# If we are on a host platform, we want to add the host tools targets like the SSAmplitudeAudio.Editor target which
-# will also depend on SSAmplitudeAudio.Static
+# If we are on a host platform, we want to add the host tools targets like the Amplitude.Editor target which
+# will also depend on Amplitude.Static
 if(PAL_TRAIT_BUILD_HOST_TOOLS)
     ly_add_target(
-        NAME SSAmplitudeAudio.Editor.Static STATIC
+        NAME Amplitude.Editor.Static STATIC
         NAMESPACE SparkyStudios::Audio
         OUTPUT_NAME SparkyStudios.Audio.Amplitude.Editor.Static
         AUTORCC
@@ -129,13 +129,13 @@ if(PAL_TRAIT_BUILD_HOST_TOOLS)
             PUBLIC
                 AZ::AssetBuilderSDK
                 Gem::AudioSystem.Editor
-                SparkyStudios::Audio::SSAmplitudeAudio.Static
+                SparkyStudios::Audio::Amplitude.Static
         RUNTIME_DEPENDENCIES
             Gem::AudioSystem.Editor
     )
 
     ly_add_target(
-        NAME SSAmplitudeAudio.Editor GEM_MODULE
+        NAME Amplitude.Editor GEM_MODULE
         NAMESPACE SparkyStudios::Audio
         OUTPUT_NAME SparkyStudios.Audio.Amplitude.Editor
         FILES_CMAKE
@@ -147,16 +147,16 @@ if(PAL_TRAIT_BUILD_HOST_TOOLS)
                 Include
         BUILD_DEPENDENCIES
             PUBLIC
-            SparkyStudios::Audio::SSAmplitudeAudio.Editor.Static
+            SparkyStudios::Audio::Amplitude.Editor.Static
         RUNTIME_DEPENDENCIES
             Gem::AudioSystem.Editor
     )
 
-    # By default, we will specify that the above target SSAmplitudeAudio would be used by
+    # By default, we will specify that the above target Amplitude would be used by
     # Tool and Builder type targets when this gem is enabled.  If you don't want it
-    # active in Tools or Builders by default, delete one of both of the following lines:
-    ly_create_alias(NAME SSAmplitudeAudio.Tools    NAMESPACE Gem TARGETS SparkyStudios::Audio::SSAmplitudeAudio.Editor)
-    ly_create_alias(NAME SSAmplitudeAudio.Builders NAMESPACE Gem TARGETS SparkyStudios::Audio::SSAmplitudeAudio.Editor)
+    # active in Tools or Builders by default, delete one or both of the following lines:
+    ly_create_alias(NAME SSAmplitudeAudio.Tools    NAMESPACE Gem TARGETS SparkyStudios::Audio::Amplitude.Editor)
+    ly_create_alias(NAME SSAmplitudeAudio.Builders NAMESPACE Gem TARGETS SparkyStudios::Audio::Amplitude.Editor)
 endif()
 
 ################################################################################
@@ -164,11 +164,11 @@ endif()
 ################################################################################
 # See if globally, tests are supported
 if(PAL_TRAIT_BUILD_TESTS_SUPPORTED)
-    # We globally support tests, see if we support tests on this platform for SSAmplitudeAudio.Static
+    # We globally support tests, see if we support tests on this platform for Amplitude.Static
     if(PAL_TRAIT_SSAMPLITUDEAUDIO_TEST_SUPPORTED)
-        # We support SSAmplitudeAudio.Tests on this platform, add SSAmplitudeAudio.Tests target which depends on SSAmplitudeAudio.Static
+        # We support Amplitude.Tests on this platform, add Amplitude.Tests target which depends on Amplitude.Static
         ly_add_target(
-            NAME SSAmplitudeAudio.Tests ${PAL_TRAIT_TEST_TARGET_TYPE}
+            NAME Amplitude.Tests ${PAL_TRAIT_TEST_TARGET_TYPE}
             NAMESPACE SparkyStudios::Audio
             OUTPUT_NAME SparkyStudios.Audio.Amplitude.Tests
             FILES_CMAKE
@@ -183,12 +183,12 @@ if(PAL_TRAIT_BUILD_TESTS_SUPPORTED)
                 PRIVATE
                     AZ::AzTest
                     AZ::AzFramework
-                    SparkyStudios::Audio::SSAmplitudeAudio.Static
+                    SparkyStudios::Audio::Amplitude.Static
         )
 
-        # Add SSAmplitudeAudio.Tests to googletest
+        # Add Amplitude.Tests to googletest
         ly_add_googletest(
-            NAME SparkyStudios::Audio::SSAmplitudeAudio.Tests
+            NAME SparkyStudios::Audio::Amplitude.Tests
         )
     endif()
 endif()

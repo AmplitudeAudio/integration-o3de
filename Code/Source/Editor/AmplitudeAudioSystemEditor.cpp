@@ -37,31 +37,31 @@ namespace SparkyStudios::Audio::Amplitude
 {
     static TImplControlType TagToType(const AZStd::string_view tag)
     {
-        if (tag == XmlTags::EventTag)
+        if (tag == XmlTags::kEventTag)
         {
             return eAMCT_AMPLITUDE_EVENT;
         }
-        else if (tag == XmlTags::RtpcTag)
+        else if (tag == XmlTags::kRtpcTag)
         {
             return eAMCT_AMPLITUDE_RTPC;
         }
-        else if (tag == XmlTags::BusTag)
+        else if (tag == XmlTags::kBusTag)
         {
             return eAMCT_AMPLITUDE_BUS;
         }
-        else if (tag == XmlTags::FileTag)
+        else if (tag == XmlTags::kFileTag)
         {
             return eAMCT_AMPLITUDE_SOUND_BANK;
         }
-        else if (tag == XmlTags::SwitchTag)
+        else if (tag == XmlTags::kSwitchTag)
         {
             return eAMCT_AMPLITUDE_SWITCH;
         }
-        else if (tag == XmlTags::StateTag)
+        else if (tag == XmlTags::kStateTag)
         {
             return eAMCT_AMPLITUDE_SWITCH;
         }
-        else if (tag == XmlTags::EnvironmentTag)
+        else if (tag == XmlTags::kEnvironmentTag)
         {
             return eAMCT_AMPLITUDE_EFFECT;
         }
@@ -74,19 +74,19 @@ namespace SparkyStudios::Audio::Amplitude
         switch (type)
         {
         case eAMCT_AMPLITUDE_EVENT:
-            return XmlTags::EventTag;
+            return XmlTags::kEventTag;
         case eAMCT_AMPLITUDE_RTPC:
-            return XmlTags::RtpcTag;
+            return XmlTags::kRtpcTag;
         case eAMCT_AMPLITUDE_SWITCH:
-            return XmlTags::SwitchTag;
+            return XmlTags::kSwitchTag;
         case eAMCT_AMPLITUDE_BUS:
-            return XmlTags::BusTag;
+            return XmlTags::kBusTag;
         case eAMCT_AMPLITUDE_SOUND_BANK:
-            return XmlTags::FileTag;
+            return XmlTags::kFileTag;
         case eAMCT_AMPLITUDE_SWITCH_STATE:
-            return XmlTags::SwitchStateTag;
+            return XmlTags::kSwitchStateTag;
         case eAMCT_AMPLITUDE_EFFECT:
-            return XmlTags::EnvironmentTag;
+            return XmlTags::kEnvironmentTag;
         }
 
         return "";
@@ -239,12 +239,12 @@ namespace SparkyStudios::Audio::Amplitude
                 AZStd::string name;
                 AZStd::string_view localized;
 
-                if (auto nameAttr = node->first_attribute(XmlTags::NameAttribute, 0, false); nameAttr != nullptr)
+                if (auto nameAttr = node->first_attribute(XmlTags::kNameAttribute, 0, false); nameAttr != nullptr)
                 {
                     name = nameAttr->value();
                 }
 
-                if (auto localizedAttr = node->first_attribute(XmlTags::LocalizedAttribute, 0, false); localizedAttr != nullptr)
+                if (auto localizedAttr = node->first_attribute(XmlTags::kLocalizedAttribute, 0, false); localizedAttr != nullptr)
                 {
                     localized = localizedAttr->value();
                 }
@@ -271,7 +271,7 @@ namespace SparkyStudios::Audio::Amplitude
                     if (auto childNode = node->first_node(); childNode != nullptr)
                     {
                         AZStd::string childName;
-                        if (auto childNameAttr = childNode->first_attribute(XmlTags::NameAttribute, 0, false); childNameAttr != nullptr)
+                        if (auto childNameAttr = childNode->first_attribute(XmlTags::kNameAttribute, 0, false); childNameAttr != nullptr)
                         {
                             childName = childNameAttr->value();
                         }
@@ -302,12 +302,12 @@ namespace SparkyStudios::Audio::Amplitude
                                 float mult = 1.0f;
                                 float shift = 0.0f;
 
-                                if (auto multAttr = node->first_attribute(XmlTags::MultiplierAttribute, 0, false); multAttr != nullptr)
+                                if (auto multAttr = node->first_attribute(XmlTags::kMultiplierAttribute, 0, false); multAttr != nullptr)
                                 {
                                     mult = AZStd::stof(AZStd::string(multAttr->value()));
                                 }
 
-                                if (auto shiftAttr = node->first_attribute(XmlTags::ShiftAttribute, 0, false); shiftAttr != nullptr)
+                                if (auto shiftAttr = node->first_attribute(XmlTags::kShiftAttribute, 0, false); shiftAttr != nullptr)
                                 {
                                     shift = AZStd::stof(AZStd::string(shiftAttr->value()));
                                 }
@@ -322,7 +322,7 @@ namespace SparkyStudios::Audio::Amplitude
                                 TSwitchStateConnectionPtr connection = AZStd::make_shared<CSwitchStateConnection>(control->GetId());
 
                                 AmObjectID state = 0.0f;
-                                if (auto valueAttr = node->first_attribute(XmlTags::ValueAttribute, 0, false); valueAttr != nullptr)
+                                if (auto valueAttr = node->first_attribute(XmlTags::kValueAttribute, 0, false); valueAttr != nullptr)
                                 {
                                     state = AZStd::stoi(AZStd::string(valueAttr->value()));
                                 }
@@ -367,18 +367,18 @@ namespace SparkyStudios::Audio::Amplitude
                             xmlAllocator.allocate_node(AZ::rapidxml::node_element, xmlAllocator.allocate_string(parentType.data()));
 
                         auto switchNameAttr = xmlAllocator.allocate_attribute(
-                            XmlTags::NameAttribute, xmlAllocator.allocate_string(parent->GetName().c_str()));
+                            XmlTags::kNameAttribute, xmlAllocator.allocate_string(parent->GetName().c_str()));
 
                         auto switchIdAttr = xmlAllocator.allocate_attribute(
-                            XmlTags::IdAttribute, xmlAllocator.allocate_string(AZStd::to_string(parent->GetAmplitudeId()).c_str()));
+                            XmlTags::kIdAttribute, xmlAllocator.allocate_string(AZStd::to_string(parent->GetAmplitudeId()).c_str()));
 
-                        auto stateNode = xmlAllocator.allocate_node(AZ::rapidxml::node_element, XmlTags::SwitchStateTag);
+                        auto stateNode = xmlAllocator.allocate_node(AZ::rapidxml::node_element, XmlTags::kSwitchStateTag);
 
                         auto stateNameAttr = xmlAllocator.allocate_attribute(
-                            XmlTags::NameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
+                            XmlTags::kNameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
 
                         auto stateIdAttr = xmlAllocator.allocate_attribute(
-                            XmlTags::IdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
+                            XmlTags::kIdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
 
                         switchNode->append_attribute(switchIdAttr);
                         switchNode->append_attribute(switchNameAttr);
@@ -399,10 +399,10 @@ namespace SparkyStudios::Audio::Amplitude
                         AZ::rapidxml::node_element, xmlAllocator.allocate_string(TypeToTag(control->GetType()).data()));
 
                     auto idAttr = xmlAllocator.allocate_attribute(
-                        XmlTags::IdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
+                        XmlTags::kIdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
 
                     auto nameAttr =
-                        xmlAllocator.allocate_attribute(XmlTags::NameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
+                        xmlAllocator.allocate_attribute(XmlTags::kNameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
 
                     connectionNode->append_attribute(idAttr);
                     connectionNode->append_attribute(nameAttr);
@@ -414,7 +414,7 @@ namespace SparkyStudios::Audio::Amplitude
                         if (rtpcConnection->m_mult != 1.f)
                         {
                             auto multAttr = xmlAllocator.allocate_attribute(
-                                XmlTags::MultiplierAttribute,
+                                XmlTags::kMultiplierAttribute,
                                 xmlAllocator.allocate_string(AZStd::to_string(rtpcConnection->m_mult).c_str()));
 
                             connectionNode->append_attribute(multAttr);
@@ -423,7 +423,7 @@ namespace SparkyStudios::Audio::Amplitude
                         if (rtpcConnection->m_shift != 0.f)
                         {
                             auto shiftAttr = xmlAllocator.allocate_attribute(
-                                XmlTags::ShiftAttribute, xmlAllocator.allocate_string(AZStd::to_string(rtpcConnection->m_shift).c_str()));
+                                XmlTags::kShiftAttribute, xmlAllocator.allocate_string(AZStd::to_string(rtpcConnection->m_shift).c_str()));
 
                             connectionNode->append_attribute(shiftAttr);
                         }
@@ -434,7 +434,7 @@ namespace SparkyStudios::Audio::Amplitude
                             AZStd::static_pointer_cast<const CSwitchStateConnection>(connection);
 
                         auto valueAttr = xmlAllocator.allocate_attribute(
-                            XmlTags::ValueAttribute, xmlAllocator.allocate_string(AZStd::to_string(stateConnection->m_state).c_str()));
+                            XmlTags::kValueAttribute, xmlAllocator.allocate_string(AZStd::to_string(stateConnection->m_state).c_str()));
 
                         connectionNode->append_attribute(valueAttr);
                     }
@@ -450,10 +450,10 @@ namespace SparkyStudios::Audio::Amplitude
                         AZ::rapidxml::node_element, xmlAllocator.allocate_string(TypeToTag(control->GetType()).data()));
 
                     auto idAttr = xmlAllocator.allocate_attribute(
-                        XmlTags::IdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
+                        XmlTags::kIdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
 
                     auto nameAttr =
-                        xmlAllocator.allocate_attribute(XmlTags::NameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
+                        xmlAllocator.allocate_attribute(XmlTags::kNameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
 
                     connectionNode->append_attribute(idAttr);
                     connectionNode->append_attribute(nameAttr);
@@ -471,13 +471,13 @@ namespace SparkyStudios::Audio::Amplitude
                     AZStd::shared_ptr<const CEffectConnection> effectConnection = AZStd::static_pointer_cast<const CEffectConnection>(connection);
 
                     auto idAttr = xmlAllocator.allocate_attribute(
-                        XmlTags::IdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
+                        XmlTags::kIdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
 
                     auto effectAttr = xmlAllocator.allocate_attribute(
-                        XmlTags::ValueAttribute, xmlAllocator.allocate_string(AZStd::to_string(effectConnection->m_effect).c_str()));
+                        XmlTags::kValueAttribute, xmlAllocator.allocate_string(AZStd::to_string(effectConnection->m_effect).c_str()));
 
                     auto nameAttr =
-                        xmlAllocator.allocate_attribute(XmlTags::NameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
+                        xmlAllocator.allocate_attribute(XmlTags::kNameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
 
                     connectionNode->append_attribute(idAttr);
                     connectionNode->append_attribute(effectAttr);
@@ -492,17 +492,17 @@ namespace SparkyStudios::Audio::Amplitude
                         AZ::rapidxml::node_element, xmlAllocator.allocate_string(TypeToTag(control->GetType()).data()));
 
                     auto idAttr = xmlAllocator.allocate_attribute(
-                        XmlTags::IdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
+                        XmlTags::kIdAttribute, xmlAllocator.allocate_string(AZStd::to_string(control->GetAmplitudeId()).c_str()));
 
                     auto nameAttr =
-                        xmlAllocator.allocate_attribute(XmlTags::NameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
+                        xmlAllocator.allocate_attribute(XmlTags::kNameAttribute, xmlAllocator.allocate_string(control->GetName().c_str()));
 
                     connectionNode->append_attribute(idAttr);
                     connectionNode->append_attribute(nameAttr);
 
                     if (control->IsLocalized())
                     {
-                        auto locAttr = xmlAllocator.allocate_attribute(XmlTags::LocalizedAttribute, xmlAllocator.allocate_string("true"));
+                        auto locAttr = xmlAllocator.allocate_attribute(XmlTags::kLocalizedAttribute, xmlAllocator.allocate_string("true"));
 
                         connectionNode->append_attribute(locAttr);
                     }

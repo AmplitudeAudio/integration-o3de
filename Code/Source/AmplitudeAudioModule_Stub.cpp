@@ -14,4 +14,4 @@
 
 #include <AzCore/Module/Module.h>
 
-AZ_DECLARE_MODULE_CLASS(Gem_SSAmplitudeAudio, AZ::Module)
+AZ_DECLARE_MODULE_CLASS(Gem_Amplitude, AZ::Module)

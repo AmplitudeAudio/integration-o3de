@@ -21,7 +21,7 @@ namespace SparkyStudios::Audio::Amplitude
 {
     void AmplitudeAudioEditorSystemComponent::Reflect(AZ::ReflectContext* context)
     {
-        if (auto serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
+        if (auto* const serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
         {
             serializeContext->Class<AmplitudeAudioEditorSystemComponent, AmplitudeAudioSystemComponent>()->Version(0);
         }

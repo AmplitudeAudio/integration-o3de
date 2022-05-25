@@ -64,5 +64,4 @@ namespace SparkyStudios::Audio::Amplitude
     private:
         AZStd::unique_ptr<::Audio::AudioSystemImplementation> _amplitudeEngine;
     };
-
 } // namespace SparkyStudios::Audio::Amplitude
