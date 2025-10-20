@@ -1,0 +1,12 @@
+.idea/
+.vs/
+.vscode/
+.zed/
+.fleet/
+
+# Generated folders
+[Bb]uild/
+[Cc]ache/
+[Uu]ser/
+__pycache__/
+.cache

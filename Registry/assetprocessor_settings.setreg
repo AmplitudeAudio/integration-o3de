@@ -1,0 +1,39 @@
+{
+  "Amazon": {
+    "AssetProcessor": {
+      "Settings": {
+        "ScanFolder AmplitudeAudio/Assets": {
+          "watch": "@GEMROOT:AmplitudeAudio@/Assets",
+          "recursive": 1,
+          "order": 101
+        },
+        "ScanFolder AmplitudeAudio/Registry": {
+          "watch": "@GEMROOT:AmplitudeAudio@/Registry",
+          "recursive": 1,
+          "order": 102
+        },
+        "Exclude AmplitudeAudioProject": {
+          "pattern": "(^|.+/)Sounds/amproject.*"
+        },
+        "RC AmplitudeBuildFile": {
+          "pattern": "(^|.+/)Sounds/ambuild.*",
+          "params": "copy",
+          "critical": true,
+          "server": "skip"
+        },
+        "RC AmplitudeATL": {
+          "pattern": "(^|.+/)libs/gameaudio/amplitude.*",
+          "params": "copy",
+          "critical": true
+        },
+        "RC amwallmaterials": {
+          "glob": "*.amwallmaterials",
+          "params": "copy",
+          "critical": true,
+          "productAssetType": "{E69D4388-6DA7-429B-BF3D-08FF8D29BE51}",
+          "server": "skip"
+        }
+      }
+    }
+  }
+}

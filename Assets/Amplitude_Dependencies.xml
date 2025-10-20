@@ -1,0 +1,5 @@
+<EngineDependencies versionnumber="1.0.0">
+    <Dependency path="sounds/amplitude/*.ampk" optional="false"/>
+    <Dependency path="libs/gameaudio/amplitude/*.xml" optional="false"/>
+    <Dependency path="libs/gameaudio/amplitude/levels/*.xml" optional="false"/>
+</EngineDependencies>

@@ -1,0 +1,22 @@
+{
+  "gem_name": "AmplitudeAudio",
+  "version": "1.0.0",
+  "display_name": "Amplitude Audio",
+  "license": "Apache-2.0",
+  "license_url": "https://github.com/AmplitudeAudio/integration-o3de/blob/main/LICENSE",
+  "origin": "Sparky Studios",
+  "origin_url": "https://amplitudeaudiosdk.com",
+  "type": "Code",
+  "summary": "Brings the power of the Amplitude Audio SDK in your O3DE game through a deep integration to the Audio System.",
+  "canonical_tags": ["Gem"],
+  "user_tags": ["Audio", "Utility", "Tools"],
+  "platforms": ["Linux", "Windows", "Android"],
+  "icon_path": "preview.png",
+  "requirements": "The Amplitude Audio SDK files must be available on your system. Either download them through the official GitHub releases, or by installing Amplitude Studio.",
+  "documentation_url": "https://docs.amplitudeaudiosdk.com",
+  "dependencies": ["AudioSystem"],
+  "repo_uri": "https://github.com/AmplitudeAudio/integration-o3de",
+  "compatible_engines": ["o3de-sdk>=2.1.0", "o3de>=2.1.0"],
+  "engine_api_dependencies": [],
+  "restricted": "AmplitudeAudio"
+}
