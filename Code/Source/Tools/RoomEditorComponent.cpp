@@ -16,6 +16,12 @@
 
 #include <Runtime/RoomComponent.h>
 #include <Tools/RoomEditorComponent.h>
+#include <Tools/RoomWallMaterialProviderBus.h>
+#include <SparkyStudios/Audio/Amplitude/Assets/RoomWallMaterialDescriptor.h>
+
+#include <AzCore/Serialization/EditContext.h>
+#include <AzCore/Debug/Profiler.h>
+#include <AzCore/Component/Entity.h>
 
 namespace SparkyStudios::Audio::Amplitude
 {

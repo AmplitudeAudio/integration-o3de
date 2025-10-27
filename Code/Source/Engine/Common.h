@@ -16,6 +16,8 @@
 
 #include <SparkyStudios/Audio/Amplitude/Math/CartesianCoordinateSystem.h>
 
+#include <AzCore/Math/Quaternion.h>
+#include <AzCore/Math/Vector3.h>
 #include <AzCore/std/string/string_view.h>
 
 namespace SparkyStudios::Audio::Amplitude

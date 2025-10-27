@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <Engine/Common.h>
 #include <Engine/O3DEMemoryAllocator.h>
 
 namespace SparkyStudios::Audio::Amplitude
