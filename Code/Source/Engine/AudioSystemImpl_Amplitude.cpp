@@ -551,7 +551,7 @@ namespace Audio
     {
         auto result = EAudioRequestStatus::Failure;
 
-        if (const auto* implObjectData = dynamic_cast<ATLAudioObjectData_Amplitude*>(audioObjectData))
+        if ([[maybe_unused]] const auto* implObjectData = dynamic_cast<ATLAudioObjectData_Amplitude*>(audioObjectData))
         {
             // const auto currentPositionCount = implObjectData->mPositionEntities.size();
             // const auto newPositionCount = multiPositionParams.m_positions.size();

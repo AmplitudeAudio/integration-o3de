@@ -98,7 +98,7 @@ namespace SparkyStudios::Audio::Amplitude
     {
         if (!_room.Valid() && amEngine->IsInitialized())
         {
-            _room = amEngine->AddRoom(static_cast<AmRoomID>(GetEntityId()));
+            _room = amEngine->AddRoom(static_cast<AmRoomID>(static_cast<AZ::u64>(GetEntityId())));
             _room.SetDimensions(ATLVec3ToAmVec3(_roomDimensions));
             _room.SetGain(_roomGain);
             _room.SetWallMaterials(
